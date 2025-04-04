@@ -176,3 +176,6 @@ cython_debug/
 mcp.json
 examples/**/mcp_server.py
 examples/**/pyproject.toml
+examples/**/*.lock
+examples/**/*.bin
+examples/**/*.sqlite3
