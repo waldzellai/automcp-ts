@@ -248,9 +248,12 @@ To integrate with Cursor IDE, create a `.cursor` folder in your project root and
     "mcpServers": {
         "crew-name-stdio": {
             "type": "stdio",
-            "command": "/path/to/your/.venv/bin/python",
+            "command": "/path/to/your/.venv/bin/uv",
             "args": [
-                "/path/to/your/mcp_server.py"
+                "--directory",
+                "path/to/your/project_dir",
+                "run",
+                "serve_stdio"
             ],
             "env": {
                 "OPENAI_API_KEY": "sk-",
