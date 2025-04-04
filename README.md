@@ -139,13 +139,29 @@ cd auto-mcp
 # Install auto-mcp in development mode
 pip install -e .
 
-# Run the CrewAI marketing example
+# Navigate to an example directory
 cd examples/crewai/marketing_agents
+
+# Generate the MCP server files
+auto_mcp new
+
+# Edit the generated mcp_server.py file to import and configure the example agent
+# (See the specific example's README for details)
+
+# Install dependencies and run
 uv sync
 python -m mcp_server
 ```
 
+Each example follows the same workflow as a regular project:
+
+1. Run auto_mcp new to generate the server files
+2. Edit mcp_server.py to import and configure the example agent
+3. Install dependencies with uv sync
+4. Run the server and 
+
 ### CrewAI example
+Here's what a typical configured `mcp_server.py` looks like for a CrewAI example:
 
 ```python
 from pydantic import BaseModel
