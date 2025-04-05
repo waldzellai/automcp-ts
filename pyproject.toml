@@ -17,9 +17,18 @@ crewai = [
     "crewai-tools>=0.38.1",
 ]
 
+langgraph = [
+    "langgraph==0.3.25",
+    "langchain==0.3.20",
+    "langchain-openai==0.2.14",
+]
+
 all = [
     "crewai>=0.108.0",
-    "crewai-tools>=0.38.1"
+    "crewai-tools>=0.38.1",
+    "langgraph==0.3.25",
+    "langchain==0.3.20",
+    "langchain-openai==0.2.14",
 ]
 
 [build-system]
