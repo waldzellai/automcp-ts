@@ -43,7 +43,7 @@ class CrewAIAdapter(BaseMCPAdapter):
         body_str = f"""def run_agent({params_str}):
             inputs = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
             with contextlib.redirect_stdout(io.StringIO()):
-                result = framework_obj().crew().kickoff(inputs=inputs.model_dump())
+                result = framework_obj().kickoff(inputs=inputs.model_dump())
             return result.model_dump_json()
         """
 
