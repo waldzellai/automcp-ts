@@ -1,23 +1,15 @@
 from typing import Any, Callable, Type
 from pydantic import BaseModel
-from mcp.server.fastmcp import FastMCP
 import json
 import contextlib
 import io
 
-from auto_mcp.core.adapter_base import BaseMCPAdapter
-
-
-class CrewAIAdapter(BaseMCPAdapter):
-    """Adapter for converting CrewAI classes to MCP tools."""
-    
-    def convert_to_mcp_tool(
-        self,
-        framework_obj: Any,
-        name: str,
-        description: str,
-        input_schema: Type[BaseModel],
-    ) -> Callable:
+def crewai_orchestrator_adapter(
+    framework_obj: Any,
+    name: str,
+    description: str,
+    input_schema: Type[BaseModel],
+) -> Callable:
         """
         Convert a CrewAI class to an MCP tool.
         
@@ -40,7 +32,7 @@ class CrewAIAdapter(BaseMCPAdapter):
         )
 
         # Create the function body that constructs the input schema
-        body_str = f"""def run_agent({params_str}):
+        body_str = f"""def run_orchestrator({params_str}):
             inputs = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
             with contextlib.redirect_stdout(io.StringIO()):
                 result = framework_obj().kickoff(inputs=inputs.model_dump())
@@ -60,40 +52,10 @@ class CrewAIAdapter(BaseMCPAdapter):
         exec(body_str, namespace)
 
         # Get the created function
-        run_agent = namespace["run_agent"]
+        run_orchestrator = namespace["run_orchestrator"]
 
         # Add proper function metadata
-        run_agent.__name__ = name
-        run_agent.__doc__ = description
+        run_orchestrator.__name__ = name
+        run_orchestrator.__doc__ = description
 
-        return run_agent
-    
-    def add_to_mcp(
-        self,
-        mcp: FastMCP,
-        framework_obj: Any,
-        name: str,
-        description: str,
-        input_schema: Type[BaseModel],
-    ) -> None:
-        """
-        Add a CrewAI class to an MCP server.
-        
-        Args:
-            mcp: The MCP server instance
-            framework_obj: The CrewAI class to add
-            name: The name of the MCP tool
-            description: The description of the MCP tool
-            input_schema: The Pydantic model class defining the input schema
-        """
-        tool = self.convert_to_mcp_tool(
-            framework_obj=framework_obj,
-            name=name,
-            description=description,
-            input_schema=input_schema,
-        )
-        mcp.add_tool(
-            tool,
-            name=name,
-            description=description,
-        )
+        return run_orchestrator
