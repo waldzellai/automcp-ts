@@ -69,7 +69,7 @@ def update_pyproject_toml(directory: Path, framework: str) -> None:
 
     Args:
         directory: Directory containing the pyproject.toml file
-        framework: The framework to use (crewai, langgraph)
+        framework: The framework to use (crewai, langgraph, pydantic, llamaindex)
     """
     pyproject_path = directory / "pyproject.toml"
 
@@ -128,7 +128,7 @@ def update_pyproject_toml(directory: Path, framework: str) -> None:
         sys.exit(1) # Exit if we can't find the root
 
     # Remove any existing auto_mcp dependencies and specific framework deps we manage
-    deps_to_remove_prefixes = ["auto_mcp", "auto-mcp", "crewai", "crewai-tools", "langgraph", "langchain", "mcp", "pydantic"]
+    deps_to_remove_prefixes = ["auto_mcp", "auto-mcp", "crewai", "crewai-tools", "langgraph", "llama-index", "langchain", "mcp", "pydantic"]
     cleaned_deps = []
     for dep in dependencies:
         if isinstance(dep, str):
@@ -178,6 +178,11 @@ def update_pyproject_toml(directory: Path, framework: str) -> None:
             "pydantic-ai==0.0.43",
             "uv>=0.6.6",
             "langchain-openai==0.2.14",
+        ])
+    elif framework == "llamaindex":
+        cleaned_deps.extend([
+            "llama-index-llms-openai",
+            "llama-index-vector-stores-pinecone",
         ])
     # No else needed as common deps are already added
 
@@ -266,7 +271,7 @@ def main():
     new_parser.add_argument(
         "-f",
         "--framework",
-        choices=["crewai", "langgraph", "pydantic"],
+        choices=["crewai", "langgraph", "pydantic", "llamaindex"],
         required=True,
         help="Agent framework to use (default: crewai)"
     )
