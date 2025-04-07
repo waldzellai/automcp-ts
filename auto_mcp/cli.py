@@ -10,6 +10,9 @@ _TEMPLATE_DIR = _CLI_DIR / "cli_templates"
 
 def create_mcp_server_file(directory: Path, framework: str) -> None:
     """Create an mcp_server.py file in the specified directory using a template."""
+    # LAZY HACK
+    if framework == 'pydantic':
+        framework = 'langgraph'
     template_file = _TEMPLATE_DIR / f"{framework}_mcp_server.py.template"
 
     if not template_file.exists():
@@ -170,6 +173,12 @@ def update_pyproject_toml(directory: Path, framework: str) -> None:
             "uv>=0.6.6",
             # Add other necessary langgraph/langchain dependencies here if needed
         ])
+    elif framework == "pydantic":
+        cleaned_deps.extend([
+            "pydantic-ai==0.0.43",
+            "uv>=0.6.6",
+            "langchain-openai==0.2.14",
+        ])
     # No else needed as common deps are already added
 
     # Add auto_mcp with proper PEP 508 direct reference syntax
@@ -257,8 +266,8 @@ def main():
     new_parser.add_argument(
         "-f",
         "--framework",
-        choices=["crewai", "langgraph"],
-        default="crewai",
+        choices=["crewai", "langgraph", "pydantic"],
+        required=True,
         help="Agent framework to use (default: crewai)"
     )
     new_parser.set_defaults(func=new_command)
