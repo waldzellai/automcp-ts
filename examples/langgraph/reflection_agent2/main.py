@@ -6,8 +6,9 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 import asyncio
+from dotenv import load_dotenv
 
-
+load_dotenv()
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
@@ -65,7 +66,7 @@ def create_reflection_graph():
     # Define conditional edge function
     def should_continue(state: State):
         max_iterations = state.get("max_iterations", 3)
-        if len(state["messages"]) >= 1 + 2 * max_iterations:
+        if len(state["messages"]) >= max_iterations:
             return END
         return "reflect"
     
@@ -104,5 +105,5 @@ async def run_reflection_graph(query: str, max_iterations: int = 3) -> Dict[str,
     }
 
 
-def run(query: str, max_iterations: int = 3) -> Dict[str, Any]:
-    return asyncio.run(run_reflection_graph(query, max_iterations))
+async def run(query: str, max_iterations: int = 3) -> Dict[str, Any]:
+    return await run_reflection_graph(query, max_iterations)
