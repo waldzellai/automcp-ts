@@ -249,9 +249,6 @@ def new_command(args) -> None:
         sys.exit(1)
 
 
-    # Update pyproject.toml
-    update_pyproject_toml(current_dir, args.framework)
-
     print("\nSetup complete! Next steps:")
     print(f"1. Edit {current_dir / 'mcp_server.py'} to import and configure your {args.framework} agent/crew/graph")
     print(f"2. Review {current_dir / 'pyproject.toml'} to ensure dependencies are correct.")
