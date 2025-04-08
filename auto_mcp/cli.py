@@ -64,7 +64,7 @@ def main():
     new_parser.add_argument(
         "-f",
         "--framework",
-        choices=["crewai", "langgraph", "pydantic", "llamaindex", "function"],
+        choices=["crewai", "langgraph", "pydantic", "llamaindex", "function", "openai"],
         required=True,
         help="Agent framework to use (default: crewai)"
     )

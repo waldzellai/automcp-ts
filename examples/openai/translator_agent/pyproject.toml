@@ -1,0 +1,28 @@
+[project]
+name = "openai-mcp-project"
+version = "0.1.0"
+description = "An openai agent project with MCP server integration"
+requires-python = ">=3.10"
+dependencies = [
+    "auto_mcp",
+    "openai-agents>=0.0.9",
+]
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+include = [ "/mcp_server.py",]
+packages = [ ".",]
+exclude = [ "__pycache__", "*.pyc", ".pytest_cache", ".ruff_cache",]
+
+[project.scripts]
+serve_stdio = "mcp_server:serve_stdio"
+serve_sse = "mcp_server:serve_sse"
+
+[tool.uv.sources]
+auto-mcp = { path = "../../../" }

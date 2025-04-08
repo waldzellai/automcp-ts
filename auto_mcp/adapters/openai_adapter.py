@@ -7,8 +7,8 @@ import io
 import asyncio
 from auto_mcp.core.adapter_base import BaseMCPAdapter
 
-class LlamaIndexAdapter(BaseMCPAdapter):
-    """Adapter for converting LlamaIndex agents and query engines to MCP tools."""
+class OpenAIAdapter(BaseMCPAdapter):
+    """Adapter for converting OpenAI agents to MCP tools."""
     
     def convert_to_mcp_tool(
         self,
@@ -18,10 +18,10 @@ class LlamaIndexAdapter(BaseMCPAdapter):
         input_schema: Type[BaseModel],
     ) -> Callable:
         """
-        Convert a LlamaIndex agent or query engine to an MCP tool.
+        Convert an OpenAI agent to an MCP tool.
         
         Args:
-            framework_obj: The LlamaIndex agent or query engine to convert
+            framework_obj: The OpenAI agent to convert
             name: The name of the MCP tool
             description: The description of the MCP tool
             input_schema: The Pydantic model class defining the input schema
@@ -44,7 +44,7 @@ class LlamaIndexAdapter(BaseMCPAdapter):
 
         if is_class:
             # Check for standard methods
-            for method_name in ['run', 'aquery', 'query', 'chat', 'achat']:
+            for method_name in ['run', 'arun', 'chat', 'achat', 'invoke', 'ainvoke']:
                 if hasattr(framework_obj, method_name):
                     method = getattr(framework_obj, method_name)
                     if callable(method):
@@ -52,7 +52,7 @@ class LlamaIndexAdapter(BaseMCPAdapter):
                         target_callable = method_name
                         break
             if not target_callable:
-                raise ValueError(f"Class {framework_obj.__name__} must have one of: run, aquery, query, chat, or achat methods")
+                raise ValueError(f"Class {framework_obj.__name__} must have one of: run, arun, chat, achat, invoke, or ainvoke methods")
         elif is_function:
             is_run_async = inspect.iscoroutinefunction(framework_obj)
             target_callable = framework_obj
@@ -64,7 +64,7 @@ class LlamaIndexAdapter(BaseMCPAdapter):
 
         # Create appropriate async function body
         if is_class:
-            body_str = f"""async def llamaindex_tool({params_str}):
+            body_str = f"""async def openai_tool({params_str}):
                 # Create input instance from parameters
                 input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
                 input_dict = input_data.model_dump()
@@ -77,17 +77,25 @@ class LlamaIndexAdapter(BaseMCPAdapter):
                 
                 with contextlib.redirect_stdout(io.StringIO()):
                     result = {await_kw}run_func(**input_dict)
-                return result
+                
+                # Ensure result is in a consistent format
+                if isinstance(result, dict):
+                    return result
+                return {{"response": str(result)}}
             """
         elif is_function:
-            body_str = f"""async def llamaindex_tool({params_str}):
+            body_str = f"""async def openai_tool({params_str}):
                 # Create input instance from parameters
                 input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
                 input_dict = input_data.model_dump()
                 
                 with contextlib.redirect_stdout(io.StringIO()):
                     result = {await_kw}framework_obj(**input_dict)
-                return result
+                
+                # Ensure result is in a consistent format
+                if isinstance(result, dict):
+                    return result
+                return {{"response": str(result)}}
             """
         else:
             raise ValueError("Internal error: Could not determine how to call the framework object.")
@@ -103,12 +111,12 @@ class LlamaIndexAdapter(BaseMCPAdapter):
 
         exec(body_str, namespace)
         
-        llamaindex_tool_async = namespace["llamaindex_tool"]
+        openai_tool_async = namespace["openai_tool"]
         
-        llamaindex_tool_async.__name__ = name
-        llamaindex_tool_async.__doc__ = description
+        openai_tool_async.__name__ = name
+        openai_tool_async.__doc__ = description
         
-        return llamaindex_tool_async
+        return openai_tool_async
     
     def add_to_mcp(
         self,
@@ -119,11 +127,11 @@ class LlamaIndexAdapter(BaseMCPAdapter):
         input_schema: Type[BaseModel],
     ) -> None:
         """
-        Add a LlamaIndex agent or query engine to an MCP server.
+        Add an OpenAI agent to an MCP server.
         
         Args:
             mcp: The MCP server instance
-            framework_obj: The LlamaIndex agent or query engine to add
+            framework_obj: The OpenAI agent to add
             name: The name of the MCP tool
             description: The description of the MCP tool
             input_schema: The Pydantic model class defining the input schema
