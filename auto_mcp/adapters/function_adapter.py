@@ -21,57 +21,46 @@ class FunctionAdapter(BaseMCPAdapter):
         input_schema: Type[BaseModel],
     ) -> Callable:
         """
-        Convert a function to an MCP tool, making it async.
-
-        Args:
-            framework_obj: The function to convert
-            name: The name of the MCP tool
-            description: The description of the MCP tool
-            input_schema: The Pydantic model class defining the input schema
-
-        Returns:
-            An awaitable callable function that can be used as an MCP tool
+        Convert a function to an MCP tool, preserving parameter types and handling async properly.
         """
-        schema_fields = input_schema.model_fields
-        params_str = ", ".join(
-            f"{field_name}: {field_info.annotation.__name__ if hasattr(field_info.annotation, '__name__') else 'Any'}"
-            for field_name, field_info in schema_fields.items()
-        )
-
-        is_run_async = inspect.iscoroutinefunction(framework_obj)
-
-        # Determine await keyword based on whether the target is async
-        await_kw = "await " if is_run_async else ""
-
-        body_str = f"""async def function_tool({params_str}):
-            # Create input instance from parameters
-            input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
-            input_dict = input_data.model_dump()
-
-            with contextlib.redirect_stdout(io.StringIO()):
-                result = {await_kw}framework_obj(**input_dict)
-            return result
-            """
-
-        namespace = {
-            "input_schema": input_schema,
-            "framework_obj": framework_obj,
-            "contextlib": contextlib,
-            "io": io,
-            "asyncio": asyncio, 
-            "inspect": inspect 
-        }
-
-        exec(body_str, namespace)
-
-        # Get the created async function
-        function_tool_async = namespace["function_tool"]
-
-        # Add proper function metadata
-        function_tool_async.__name__ = name
-        function_tool_async.__doc__ = description
-
-        return function_tool_async
+        # Determine if the framework object is async
+        is_async = inspect.iscoroutinefunction(framework_obj)
+        
+        # Build a function signature dynamically to preserve type hints
+        async def wrapper(**kwargs):
+            try:
+                # Validate input using the schema
+                input_data = input_schema(**kwargs)
+                input_dict = input_data.model_dump()
+                
+                # Execute the target function with appropriate async handling
+                if is_async:
+                    # Use create_task to ensure proper task isolation
+                    task = asyncio.create_task(framework_obj(**input_dict))
+                    # Wait for the task to complete
+                    result = await task
+                else:
+                    # For non-async functions, run directly
+                    result = framework_obj(**input_dict)
+                    
+                return result
+            except Exception as e:
+                # Proper error handling is important for async tasks
+                print(f"Error in tool execution: {e}")
+                raise
+        
+        # Create a function with the proper signature
+        sig = inspect.signature(framework_obj)
+        # Keep only parameters that exist in the schema
+        schema_params = {k: v for k, v in sig.parameters.items() 
+                        if k in input_schema.model_fields}
+        
+        # Apply the correct signature to our wrapper function
+        wrapper.__signature__ = sig.replace(parameters=list(schema_params.values()))
+        wrapper.__name__ = name
+        wrapper.__doc__ = description
+        
+        return wrapper
 
     def add_to_mcp(
         self,
