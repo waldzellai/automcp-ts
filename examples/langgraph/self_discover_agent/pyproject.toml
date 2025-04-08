@@ -1,0 +1,31 @@
+[project]
+name = "mcp-project"
+version = "0.1.0"
+description = "A project with MCP server integration"
+requires-python = ">=3.10"
+dependencies = [
+ "auto_mcp @ file:////home/gowtham/Desktop/Work/auto-mcp",
+ "langchain-core>=0.3.51",
+ "langchain-openai==0.2.14",
+ "langchain==0.3.20",
+ "langgraph==0.3.25",
+ "mcp>=1.6.0",
+ "pydantic>=2.11.1",
+ "uv>=0.6.6",
+]
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.scripts]
+serve_stdio = "mcp_server:serve_stdio"
+serve_sse = "mcp_server:serve_sse"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+include = [ "/mcp_server.py",]
+packages = [ ".",]
+exclude = [ "__pycache__", "*.pyc", ".pytest_cache", ".ruff_cache",]
