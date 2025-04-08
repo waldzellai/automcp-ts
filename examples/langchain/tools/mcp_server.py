@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.function_adapter import FunctionAdapter
+from auto_mcp.adapters.langchain_tool_adapter import LangchainToolAdapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -11,41 +11,43 @@ mcp = FastMCP("MCP Server")
 warnings.filterwarnings("ignore")
 
 # You'll need to replace this with your actual LangGraph graph/class/function
-from main import search_google, run_python_code, search_arxiv
+from main import google_serper_tool, python_repl_tool, arxiv_tool
 
 # Define the input schema for your graph/agent
 class SearchGoogleInput(BaseModel):
     query: str
 
 class RunPythonCodeInput(BaseModel):
-    code: str
+    command: str
 
 class SearchArxivInput(BaseModel):
     query: str
 
 # Create an adapter for LangGraph
-adapter = FunctionAdapter()
+adapter = LangchainToolAdapter()
 
 adapter.add_to_mcp(
     mcp=mcp,
-    framework_obj=search_google, # Replace with your actual function
-    name="search_google_tool",    # Replace with your function name
+    tool_instance=google_serper_tool, 
+    run_func="results",    
+    name="search_google_tool",    
     description="Search Google for a query",
     input_schema=SearchGoogleInput,
 )
 
 adapter.add_to_mcp(
     mcp=mcp,
-    framework_obj=run_python_code, # Replace with your actual function
-    name="run_python_code_tool",    # Replace with your function name
+    tool_instance=python_repl_tool, 
+    run_func="run",    
+    name="run_python_code_tool",    
     description="Run Python code",
     input_schema=RunPythonCodeInput,
 )
 
 adapter.add_to_mcp(
     mcp=mcp,
-    framework_obj=search_arxiv, # Replace with your actual function
-    name="search_arxiv_tool",    # Replace with your function name
+    tool_instance=arxiv_tool, 
+    name="search_arxiv_tool",    
     description="Search Arxiv for a query",
     input_schema=SearchArxivInput,
 )
