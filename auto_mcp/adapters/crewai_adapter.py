@@ -4,7 +4,7 @@ import json
 import contextlib
 import io
 
-def crewai_orchestrator_adapter(
+def create_crewai_orchestrator_adapter(
     framework_obj: Any,
     name: str,
     description: str,
