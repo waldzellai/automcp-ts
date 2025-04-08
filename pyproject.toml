@@ -20,7 +20,11 @@ crewai = [
 langgraph = [
     "langgraph==0.3.25",
     "langchain==0.3.20",
-    "langchain-openai==0.2.14",
+    "langchain-openai==0.2.14"
+]
+
+llamaindex = [
+    "llama-index>=0.12.28"
 ]
 
 all = [
@@ -29,6 +33,7 @@ all = [
     "langgraph==0.3.25",
     "langchain==0.3.20",
     "langchain-openai==0.2.14",
+    "llama-index>=0.12.28"
 ]
 
 [build-system]
