@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.function_adapter import FunctionAdapter
+from auto_mcp.adapters.crewai_tool_adapter import CrewaiToolAdapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -11,29 +11,29 @@ mcp = FastMCP("MCP Server")
 warnings.filterwarnings("ignore")
 
 # You'll need to replace this with your actual LangGraph graph/class/function
-from main import search_google_tool, search_exa_tool
+from main import serper_tool, exa_tool
 
 class SearchGoogleInput(BaseModel):
-    query: str
+    search_query: str
 
 class SearchExaInput(BaseModel):
-    query: str
+    search_query: str
 
 # Create an adapter for LangGraph
-adapter = FunctionAdapter()
+adapter = CrewaiToolAdapter()
 
 adapter.add_to_mcp(
     mcp=mcp,
-    framework_obj=search_google_tool, # Replace with your actual function
-    name="search_google_tool",    # Replace with your function name
+    tool_instance=serper_tool,
+    name="search_google_tool",
     description="Search Google for a query",
     input_schema=SearchGoogleInput,
 )
 
 adapter.add_to_mcp(
     mcp=mcp,
-    framework_obj=search_exa_tool, # Replace with your actual function
-    name="search_exa_tool",    # Replace with your function name
+    tool_instance=exa_tool,
+    name="search_exa_tool",
     description="Search Exa for a query",
     input_schema=SearchExaInput,
 )
