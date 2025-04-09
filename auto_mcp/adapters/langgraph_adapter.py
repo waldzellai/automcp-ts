@@ -17,10 +17,10 @@ def create_langgraph_adapter(
     input_schema: Type[BaseModel],
 ) -> Callable:
     """
-    Convert a LangGraph object to an MCP tool, making it async.
+    Convert a graph object to an MCP tool, making it async.
 
     Args:
-        agent_instance: The LangGraph class, function, or compiled graph
+        agent_instance: The graph object
         name: The name of the MCP tool
         description: The description of the MCP tool
         input_schema: The Pydantic model class defining the input schema
@@ -42,12 +42,11 @@ def create_langgraph_adapter(
         
         # Call the async run method
         with contextlib.redirect_stdout(io.StringIO()):
-            result = await agent_instance.graph.ainvoke(input_dict)
+            result = await agent_instance.ainvoke(input_dict)
             result = ensure_serializable(result)
         
         return result
     """
-
 
     namespace = {
         "input_schema": input_schema,

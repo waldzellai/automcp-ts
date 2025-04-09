@@ -19,7 +19,7 @@ class InputSchema(BaseModel):
 
 # Create an adapter for LangGraph
 mcp_langgraph_agent = create_langgraph_adapter(
-    agent_instance=ReflectionAgent(),
+    agent_instance=ReflectionAgent().graph,
     name="reflection_agent",
     description="A reflection agent that takes an essay and returns a reflection on it",
     input_schema=InputSchema,
