@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.openai_adapter import OpenAIAdapter
+from auto_mcp.adapters.openai_adapter import create_openai_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 from main import TranslatorAgent
@@ -15,15 +15,20 @@ class InputSchema(BaseModel):
     message: str
 
 # Create an adapter for OpenAI
-adapter = OpenAIAdapter()
-agent = TranslatorAgent
+agent = TranslatorAgent()
 
-adapter.add_to_mcp(
-    mcp=mcp,
-    framework_obj=agent,
+adapter = create_openai_agent_adapter(
+    run_after_func=agent.run_after,
+    main_agent_instance=agent.get_orchestrator_agent(),
     name="Translator Agent",
     description="Translate the user's message to Spanish, French, and Italian",
     input_schema=InputSchema,
+)
+
+mcp.add_tool(
+    adapter,
+    name="Translator Agent",
+    description="Translate the user's message to Spanish, French, and Italian",
 )
 
 # Server entrypoints
