@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.langchain_tool_adapter import LangchainToolAdapter
+from auto_mcp.adapters.langchain_tool_adapter import create_langchain_tool_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -10,10 +10,9 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace this with your actual LangGraph graph/class/function
+# You'll need to replace these imports with your actual crew class
 from main import google_serper_tool, python_repl_tool, arxiv_tool
 
-# Define the input schema for your graph/agent
 class SearchGoogleInput(BaseModel):
     query: str
 
@@ -23,33 +22,42 @@ class RunPythonCodeInput(BaseModel):
 class SearchArxivInput(BaseModel):
     query: str
 
-# Create an adapter for LangGraph
-adapter = LangchainToolAdapter()
-
-adapter.add_to_mcp(
-    mcp=mcp,
-    tool_instance=google_serper_tool, 
-    run_func="results",    
-    name="search_google_tool",    
+mcp_google_serper_tool = create_langchain_tool_adapter(
+    tool_instance=google_serper_tool,
+    name="search_google_tool",
     description="Search Google for a query",
     input_schema=SearchGoogleInput,
+    run_func="results",
 )
 
-adapter.add_to_mcp(
-    mcp=mcp,
-    tool_instance=python_repl_tool, 
-    run_func="run",    
-    name="run_python_code_tool",    
+mcp_python_repl_tool = create_langchain_tool_adapter(
+    tool_instance=python_repl_tool,
+    name="run_python_code_tool",
     description="Run Python code",
     input_schema=RunPythonCodeInput,
 )
 
-adapter.add_to_mcp(
-    mcp=mcp,
-    tool_instance=arxiv_tool, 
-    name="search_arxiv_tool",    
+mcp_arxiv_tool = create_langchain_tool_adapter(
+    tool_instance=arxiv_tool,
+    name="search_arxiv_tool",
     description="Search Arxiv for a query",
     input_schema=SearchArxivInput,
+)
+
+mcp.add_tool(
+    mcp_google_serper_tool,
+    name="search_google_tool",
+    description="Search Google for a query",
+)
+mcp.add_tool(
+    mcp_python_repl_tool,
+    name="run_python_code_tool",
+    description="Run Python code",
+)
+mcp.add_tool(
+    mcp_arxiv_tool,
+    name="search_arxiv_tool",
+    description="Search Arxiv for a query",
 )
 
 # Server entrypoints
