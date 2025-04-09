@@ -40,34 +40,17 @@ settings = Settings(
 
 app = MCPApp(name="mcp_basic_agent", settings=settings)
 
-async def run_mcp_agent(
-    query: str,
-):
-    """
-    Handle tool execution requests.
-    """
-    if query is None:
-        raise ValueError("Missing arguments")
+async def app_initialize(app: MCPApp):
+    await app.initialize()
+    app.context.config.mcp.servers["filesystem"].args.extend([os.getcwd()])
+    return app
 
-    try:
-        await app.initialize()
-        app.context.config.mcp.servers["filesystem"].args.extend([os.getcwd()])
-
-        finder_agent = Agent(
-            name="finder",
-            instruction="""You are an agent with access to the filesystem, 
-            as well as the ability to fetch URLs. Your job is to identify 
-            the closest match to a user's request, make the appropriate tool calls, 
-            and return the URI and CONTENTS of the closest match.""",
-            server_names=["fetch", "filesystem"],
-        )
-        llm = await finder_agent.attach_llm(OpenAIAugmentedLLM)
-        response = await llm.generate_str(query)
-        return TextContent(type="text", text=response)
-
-    except Exception as e:
-        raise ValueError(f"Error: {e}")
-
-if __name__ == "__main__":
-    print(asyncio.run(run_mcp_agent("summarize the contents of the file test-file.txt")))
+finder_agent = Agent(
+    name="basic_agent",
+    instruction="""You are an agent with access to the filesystem, 
+    as well as the ability to fetch URLs. Your job is to identify 
+    the closest match to a user's request, make the appropriate tool calls, 
+    and return the URI and CONTENTS of the closest match.""",
+    server_names=["fetch", "filesystem"],
+)
 

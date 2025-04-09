@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.function_adapter import FunctionAdapter
+from auto_mcp.adapters.mcp_agent_adapter import create_mcp_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -10,21 +10,29 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace this with your actual LangGraph graph/class/function
-from main import run_mcp_agent
+# You'll need to replace these imports with your actual crew class
+from main import finder_agent, app, app_initialize
+from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 
-class RunMCPAgentInput(BaseModel):
+# Define the input schema for your crew
+class InputSchema(BaseModel):
     query: str
 
-# Create an adapter for LangGraph
-adapter = FunctionAdapter()
+# Create an adapter for Langchain
+mcp_agent = create_mcp_agent_adapter(
+    agent_instance=finder_agent,
+    llm=OpenAIAugmentedLLM,
+    app=app,
+    app_initialize_fn=app_initialize,
+    name="multipurpose_agent",
+    description="A multipurpose agent that can has acess to filesystem and to fetch URLs",
+    input_schema=InputSchema,
+)
 
-adapter.add_to_mcp(
-    mcp=mcp,
-    framework_obj=run_mcp_agent, # Replace with your actual function
-    name="run_mcp_agent",    # Replace with your function name
-    description="Run the MCP agent which has fetch and filesystem tools",
-    input_schema=RunMCPAgentInput,
+mcp.add_tool(
+    mcp_agent,
+    name="multipurpose_agent",
+    description="A multipurpose agent that can has acess to filesystem and to fetch URLs"
 )
 
 # Server entrypoints
