@@ -19,31 +19,37 @@ class SearchGoogleInput(BaseModel):
 class SearchExaInput(BaseModel):
     search_query: str
 
+name_search_google_tool = "search_google_tool"
+description_search_google_tool = "Search Google for a query"
+
 # Create an adapter for LangGraph
 mcp_serper_tool = create_crewai_tool_adapter(
     tool_instance=serper_tool,
-    name="search_google_tool",
-    description="Search Google for a query",
+    name=name_search_google_tool,
+    description=description_search_google_tool,
     input_schema=SearchGoogleInput,
 )
 
+name_search_exa_tool = "search_exa_tool"
+description_search_exa_tool = "Search Exa for a query"
+
 mcp_exa_tool = create_crewai_tool_adapter(
     tool_instance=exa_tool,
-    name="search_exa_tool",
-    description="Search Exa for a query",
+    name=name_search_exa_tool,
+    description=description_search_exa_tool,
     input_schema=SearchExaInput,
 )
 
 mcp.add_tool(
     mcp_serper_tool,
-    name="search_google_tool",
-    description="Search Google for a query",
+    name=name_search_google_tool,
+    description=description_search_google_tool,
 )
 
 mcp.add_tool(
     mcp_exa_tool,
-    name="search_exa_tool",
-    description="Search Exa for a query",
+    name=name_search_exa_tool,
+    description=description_search_exa_tool,
 )
 
 # Server entrypoints

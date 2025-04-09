@@ -16,18 +16,21 @@ from main import weather_agent
 class InputSchema(BaseModel):
     query: str
 
+name = "weather_agent"
+description = "Get the weather in a location"
+
 # Create an adapter for Langchain
 mcp_pydantic_agent = create_pydantic_agent_adapter(
     agent_instance=weather_agent,
-    name="weather_agent",
-    description="Get the weather in a location",
+    name=name,
+    description=description,
     input_schema=InputSchema,
 )
 
 mcp.add_tool(
     mcp_pydantic_agent,
-    name="weather_agent",
-    description="Get the weather in a location"
+    name=name,
+    description=description
 )
 
 # Server entrypoints

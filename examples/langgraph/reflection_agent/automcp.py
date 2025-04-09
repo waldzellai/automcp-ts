@@ -17,17 +17,20 @@ from main import ReflectionAgent
 class InputSchema(BaseModel):
     query: str
 
+name = "reflection_agent"
+description = "A reflection agent that takes an essay and returns a reflection on it"
+
 # Create an adapter for LangGraph
 mcp_langgraph_agent = create_langgraph_adapter(
     agent_instance=ReflectionAgent().graph,
-    name="reflection_agent",
-    description="A reflection agent that takes an essay and returns a reflection on it",
+    name=name,
+    description=description,
     input_schema=InputSchema,
 )
 mcp.add_tool(
     mcp_langgraph_agent,
-    name="reflection_agent",
-    description="A reflection agent that takes an essay and returns a reflection on it",
+    name=name,
+    description=description,
 )
 
 # Server entrypoints

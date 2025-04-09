@@ -18,21 +18,24 @@ from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 class InputSchema(BaseModel):
     query: str
 
+name = "multipurpose_agent"
+description = "A multipurpose agent that can has acess to filesystem and to fetch URLs"
+
 # Create an adapter for Langchain
 mcp_agent = create_mcp_agent_adapter(
     agent_instance=finder_agent,
     llm=OpenAIAugmentedLLM,
     app=app,
     app_initialize_fn=app_initialize,
-    name="multipurpose_agent",
-    description="A multipurpose agent that can has acess to filesystem and to fetch URLs",
+    name=name,
+    description=description,
     input_schema=InputSchema,
 )
 
 mcp.add_tool(
     mcp_agent,
-    name="multipurpose_agent",
-    description="A multipurpose agent that can has acess to filesystem and to fetch URLs"
+    name=name,
+    description=description
 )
 
 # Server entrypoints
