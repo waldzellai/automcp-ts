@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.langgraph_adapter import LangGraphAdapter
+from auto_mcp.adapters.langgraph_adapter import create_langgraph_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -21,19 +21,17 @@ class InputSchema(BaseModel):
     # Add more parameters as needed
 
 # Create an adapter for LangGraph
-adapter = LangGraphAdapter()
-
-# Add your LangGraph object to the MCP server
-# Uncomment and modify this code when you have your graph/agent ready
-'''
-adapter.add_to_mcp(
-    mcp=mcp,
-    framework_obj=your_langgraph_object, # Replace with your actual LangGraph object
-    name="Your LangGraph Agent Name",    # Replace with your agent/graph name
+mcp_langgraph_agent = create_langgraph_agent_adapter(
+    agent_instance=your_langgraph_agent,
+    name="Your LangGraph Agent Name",
     description="Description of what your LangGraph agent/graph does",
     input_schema=InputSchema,
 )
-'''
+mcp.add_tool(
+    mcp_langgraph_agent,
+    name="Your LangGraph Agent Name",
+    description="Description of what your LangGraph agent/graph does",
+)
 
 # Server entrypoints
 def serve_sse():

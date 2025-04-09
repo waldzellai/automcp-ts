@@ -13,7 +13,8 @@ import asyncio
 load_dotenv()
 
 class State(TypedDict):
-    messages: Annotated[list, add_messages]
+    query: str
+    messages: Annotated[list, add_messages] = []
 
 class ReflectionAgent:
     def __init__(self, openai_model: str = "gpt-4o-mini"):
@@ -48,15 +49,44 @@ class ReflectionAgent:
         self._init_graph()
 
     def generation_node(self, state: State) -> State:
-        return {"messages": [self.generate.invoke(state["messages"])]}
+        messages = state.get("messages", [])
+        
+        # If messages is empty, create a new message from query
+        if not messages:
+            query = state["query"]
+            # The prompt template will add the system message, we just need the human query
+            input_messages = [HumanMessage(content=query)]
+        else:
+            # The content is already built up in messages
+            input_messages = messages
+            
+        # This invokes the generate_prompt with the system prompt + input_messages
+        response = self.generate.invoke({"messages": input_messages})
+        
+        # Add the new AI message to the existing messages
+        updated_messages = messages + [response]
+        return {"messages": updated_messages}
 
     def reflection_node(self, state: State) -> State:
-        cls_map = {"ai": AIMessage, "human": HumanMessage}
-        translated = [state["messages"][0]] + [
-            cls_map[msg.type](content=msg.content) for msg in state["messages"][1:]
-        ]
-        res = self.reflect.invoke(translated)
-        return {"messages": [HumanMessage(content=res.content)]}
+        messages = state["messages"]
+        
+        # Get the last AI message for reflection (the essay to critique)
+        ai_messages = [msg for msg in messages if isinstance(msg, AIMessage)]
+        if not ai_messages:
+            # Should never happen but just in case
+            return {"messages": messages}
+            
+        last_essay = ai_messages[-1]
+        
+        # For the reflection, we need a message with the essay to critique
+        reflection_input = [HumanMessage(content=last_essay.content)]
+        
+        # This invokes the reflection_prompt with the system prompt + reflection_input
+        reflection = self.reflect.invoke({"messages": reflection_input})
+        
+        # Add the reflection as a human message to the existing messages
+        updated_messages = messages + [HumanMessage(content=reflection.content)]
+        return {"messages": updated_messages}
 
     def _init_graph(self):
         builder = StateGraph(State)
@@ -71,50 +101,22 @@ class ReflectionAgent:
         self.graph = builder.compile()
 
     def should_continue(self, state: State):
-        # Use the instance attribute for max_iterations
-        if len(state["messages"]) >= self.max_iterations:
+        if len(state.get("messages", [])) >= self.max_iterations:
             return END
         return "reflect"
 
-    async def run(self, query: str, max_iterations: int = 3) -> Dict[str, Any]:
-        """Runs the agent asynchronously using ainvoke."""
-        # Update max_iterations from input for this specific run
-        self.max_iterations = max_iterations
 
-        initial_state = {
-            "messages": [HumanMessage(content=query)],
-            "max_iterations": max_iterations
-        }
-
-        final_state = await self.graph.ainvoke(initial_state)
-
-
-        all_messages = final_state["messages"]
-        essays = [msg.content for msg in all_messages if isinstance(msg, AIMessage)]
-        critiques = [msg.content for msg in all_messages[2:] if isinstance(msg, HumanMessage)] # Assuming first is query, second is first essay
-
-        return {
-            "final_essay": essays[-1] if essays else None,
-            "all_essays": essays,
-            "all_critiques": critiques,
-            # Optionally return raw messages if useful for debugging/client
-            # "all_messages": all_messages
-        }
-
-# ***** MODIFY MAIN EXECUTION BLOCK TO USE ASYNCIO.RUN *****
 if __name__ == "__main__":
     import time
 
-    async def main():
-        start = time.time()
-        agent = ReflectionAgent()
-        print("Running ReflectionAgent...")
-        res = await agent.run(query="Write an essay on the topicality of The Little Prince and its message in modern life", max_iterations=3)
-        print("\n--- Results ---")
-        print(f"Final Essay: {res.get('final_essay', 'N/A')[:200]}...") # Print snippet
-        # print(res) # Print full result if needed
-        end = time.time()
-        print(f"\nTime taken: {end - start:.2f} seconds")
+    start = time.time()
+    reflection_agent = ReflectionAgent()
 
-    # Run the async main function
-    asyncio.run(main())
+    initial_state = {
+        "query": "Write an essay on the topicality of The Little Prince and its message in modern life",
+    }
+
+    final_state = asyncio.run(reflection_agent.graph.ainvoke(initial_state))
+    print(final_state)
+    end = time.time()
+    print(f"\nTime taken: {end - start:.2f} seconds")
