@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.llamaindex_adapter import LlamaIndexAdapter
+from auto_mcp.adapters.llamaindex_adapter import create_llamaindex_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -20,18 +20,20 @@ class InputSchema(BaseModel):
     query: str
     # Add more parameters as needed
 
-# Create an adapter for LlamaIndex
-adapter = LlamaIndexAdapter()
-
 # Add your LlamaIndex agent/query engine to the MCP server
 # Uncomment and modify this code when you have your agent/query engine ready
 '''
-adapter.add_to_mcp(
-    mcp=mcp,
-    framework_obj=YourLlamaIndexAgent,  # Replace with your actual LlamaIndex agent/query engine
-    name="Your LlamaIndex Agent Name",  # Replace with your agent name
+adapter = create_llamaindex_agent_adapter(
+    agent_instance=Instance of the agent to run,  # Replace with your actual LlamaIndex agent instance
+    name="Your OpenAI Agent Name",  # Replace with your agent name
     description="Description of what your LlamaIndex agent does",
     input_schema=InputSchema,
+)
+
+mcp.add_tool(
+    adapter,
+    name="Your_Agent_Name",
+    description="Description of what your agent does",
 )
 '''
 

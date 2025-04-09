@@ -1,30 +1,33 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.llamaindex_adapter import LlamaIndexAdapter
+from auto_mcp.adapters.llamaindex_adapter import create_llamaindex_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 from main import QueryAgent
 
 # Create MCP server
-mcp = FastMCP("LLAMA INDEX QUERY AGENT")
+mcp = FastMCP("LlamaIndex City Information Agent MCP Server")
 
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# Define the input schema for the QueryAgent
+# Define the input schema for your agent/query engine
 class InputSchema(BaseModel):
-    query: str = "Tell me about the arts and culture of the city with the highest population."
+    query: str
 
-# Create an adapter for LlamaIndex
-adapter = LlamaIndexAdapter()
+query_agent = QueryAgent()
 
-# Add the QueryAgent to the MCP server
-adapter.add_to_mcp(
-    mcp=mcp,
-    framework_obj=QueryAgent,  # The QueryAgent class from main.py
-    name="City Information Agent",  # Name of the agent
+adapter = create_llamaindex_agent_adapter(
+    agent_instance=query_agent.get_agent(),
+    name="City Information Agent",
     description="An agent that can answer questions about cities using both SQL and vector search capabilities",
     input_schema=InputSchema,
+)
+
+mcp.add_tool(
+    adapter,
+    name="City Information Agent",
+    description="An agent that can answer questions about cities using both SQL and vector search capabilities",
 )
 
 # Server entrypoints

@@ -151,20 +151,8 @@ class QueryAgent:
             ),
         )
 
-    async def run(self, query: str) -> Dict[str, Any]:
-        """Run the agent with the given query."""
-        handler = self.agent.run(query, ctx=self.ctx)
-        
-        async for ev in handler.stream_events():
-            if isinstance(ev, ToolCallResult):
-                print(
-                    f"\nCalled tool {ev.tool_name} with args {ev.tool_kwargs}, got response: {ev.tool_output}"
-                )
-            elif isinstance(ev, AgentStream):
-                print(ev.delta, end="", flush=True)
-        
-        response = await handler
-        return {"response": str(response)}
+    def get_agent(self):
+        return self.agent
 
 async def main():
     agent = QueryAgent()
