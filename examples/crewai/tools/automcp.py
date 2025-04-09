@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.crewai_tool_adapter import CrewaiToolAdapter
+from auto_mcp.adapters.crewai_tool_adapter import create_crewai_tool_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -10,7 +10,7 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace this with your actual LangGraph graph/class/function
+# You'll need to replace these imports with your actual crew class
 from main import serper_tool, exa_tool
 
 class SearchGoogleInput(BaseModel):
@@ -20,22 +20,30 @@ class SearchExaInput(BaseModel):
     search_query: str
 
 # Create an adapter for LangGraph
-adapter = CrewaiToolAdapter()
-
-adapter.add_to_mcp(
-    mcp=mcp,
+mcp_serper_tool = create_crewai_tool_adapter(
     tool_instance=serper_tool,
     name="search_google_tool",
     description="Search Google for a query",
     input_schema=SearchGoogleInput,
 )
 
-adapter.add_to_mcp(
-    mcp=mcp,
+mcp_exa_tool = create_crewai_tool_adapter(
     tool_instance=exa_tool,
     name="search_exa_tool",
     description="Search Exa for a query",
     input_schema=SearchExaInput,
+)
+
+mcp.add_tool(
+    mcp_serper_tool,
+    name="search_google_tool",
+    description="Search Google for a query",
+)
+
+mcp.add_tool(
+    mcp_exa_tool,
+    name="search_exa_tool",
+    description="Search Exa for a query",
 )
 
 # Server entrypoints

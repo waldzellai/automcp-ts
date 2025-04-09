@@ -17,16 +17,16 @@ requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
 [project.scripts]
-serve_stdio = "mcp_server:serve_stdio"
-serve_sse = "mcp_server:serve_sse"
+serve_stdio = "automcp:serve_stdio"
+serve_sse = "automcp:serve_sse"
+
+[tool.hatch.build.targets.wheel]
+include = [ "automcp.py",]
+packages = [ ".",]
+exclude = [ "__pycache__", "*.pyc", ".pytest_cache", ".ruff_cache",]
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-[tool.hatch.build.targets.wheel]
-include = [ "/mcp_server.py",]
-packages = [ ".",]
-exclude = [ "__pycache__", "*.pyc", ".pytest_cache", ".ruff_cache",]
 
 [tool.uv.sources]
 auto-mcp = { path = "../../../" }
