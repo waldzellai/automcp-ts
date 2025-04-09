@@ -109,7 +109,7 @@ def main():
             "mcp_agent"
         ],
         required=True,
-        help="Agent framework to use (crewai_orchestrator, langgraph, pydantic, llamaindex, function, openai, crewai_tool, langchain_tool, crewai_agent)"
+        help="Agent framework to use (crewai_orchestrator, langgraph, pydantic, llamaindex, openai, crewai_tool, langchain_tool, crewai_agent)"
     )
     init_parser.set_defaults(func=init_command)
 
