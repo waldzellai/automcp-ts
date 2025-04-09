@@ -32,7 +32,7 @@ adapter = create_crewai_orchestrator_adapter(
     input_schema=InputSchema,
 )
 
-mcp.add_orchestrator(
+mcp.add_tool(
     adapter,
     name=name,
     description=description,
