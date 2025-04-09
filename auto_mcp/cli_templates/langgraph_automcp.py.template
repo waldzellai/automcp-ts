@@ -13,6 +13,9 @@ warnings.filterwarnings("ignore")
 # You'll need to replace this with your actual LangGraph graph/class/function
 # from your_module import your_langgraph_object
 
+name = "Your LangGraph Agent Name"
+description = "Description of what your LangGraph agent/graph does"
+
 # Define the input schema for your graph/agent
 class InputSchema(BaseModel):
     # Replace these with your actual input parameters
@@ -23,14 +26,14 @@ class InputSchema(BaseModel):
 # Create an adapter for LangGraph
 mcp_langgraph_agent = create_langgraph_agent_adapter(
     agent_instance=your_langgraph_agent,
-    name="Your LangGraph Agent Name",
-    description="Description of what your LangGraph agent/graph does",
+    name=name,
+    description=description,
     input_schema=InputSchema,
 )
 mcp.add_tool(
     mcp_langgraph_agent,
-    name="Your LangGraph Agent Name",
-    description="Description of what your LangGraph agent/graph does",
+    name=name,
+    description=description,
 )
 
 # Server entrypoints

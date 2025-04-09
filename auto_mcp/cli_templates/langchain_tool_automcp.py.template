@@ -20,19 +20,22 @@ class InputSchema(BaseModel):
     parameter2: str
     # Add more parameters as needed
 
+name = "Your Tool Name"
+description = "Description of what your tool does"
+
 # Create an adapter for Langchain
 mcp_langchain_tool = create_langchain_tool_adapter(
     tool_instance=YourToolClass,
-    name="Your Tool Name",
-    description="Description of what your tool does",
+    name=name,
+    description=description,
     input_schema=InputSchema,
     run_func="run", # Optional, this is the method to call on the tool instance
 )
 
 mcp.add_tool(
     tool=mcp_langchain_tool,
-    name="Your Tool Name",
-    description="Description of what your tool does"
+    name=name,
+    description=description
 )
 
 # Server entrypoints

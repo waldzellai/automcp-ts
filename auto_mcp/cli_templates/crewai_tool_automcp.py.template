@@ -20,21 +20,22 @@ class InputSchema(BaseModel):
     parameter2: str
     # Add more parameters as needed
 
+name = "Your Tool Name"
+description = "Description of what your tool does"
+
 # Uncomment and modify this code when you have your crew tool instance ready
-```
 adapter = create_crewai_tool_adapter(
     tool_instance=YourToolInstance,
-    name="Your Tool Name",
-    description="Description of what your tool does",
+    name=name,
+    description=description,
     input_schema=InputSchema,
 )
 
 mcp.add_tool(
     adapter,
-    name="Your_Tool_Name",
-    description="Description of what your tool does",
+    name=name,
+    description=description,
 )
-```
 
 # Server entrypoints
 def serve_sse():

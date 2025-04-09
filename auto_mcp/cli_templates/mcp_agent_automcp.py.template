@@ -20,21 +20,24 @@ class InputSchema(BaseModel):
     query: str
     # Add more parameters as needed
 
+name = "Your Agent Name"
+description = "Description of what your agent does"
+
 # Create an adapter for Langchain
 mcp_agent = create_mcp_agent_adapter(
     agent_instance=instance_of_your_agent_class,
     llm=mcp_agent_llm,
     app=mcp_agent_app,
     app_initialize_fn=mcp_agent_app_initialize_fn,
-    name="Your Agent Name",
-    description="Description of what your agent does",
+    name=name,
+    description=description,
     input_schema=InputSchema,
 )
 
 mcp.add_tool(
     mcp_pydantic_agent,
-    name="Your Agent Name",
-    description="Description of what your agent does"
+    name=name,
+    description=description
 )
 
 # Server entrypoints
