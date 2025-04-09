@@ -67,28 +67,27 @@ class TranslatorAgent:
         self.intitalize_orchestrator_agent()
         self.intitalize_synthesizer_agent()
 
-    async def run(self, message: str):
-        orchestrator_result = await Runner.run(self.orchestrator_agent, message)
+    def get_orchestrator_agent(self):
+        return self.orchestrator_agent
 
-        for item in orchestrator_result.new_items:
-            if isinstance(item, MessageOutputItem):
-                text = ItemHelpers.text_message_output(item)
-                if text:
-                    print(f"  - Translation step: {text}")
-
+    def get_synthesizer_agent(self):
+        return self.synthesizer_agent
+    
+    async def run_after(self, orchestrator_result: str):
         synthesizer_result = await Runner.run(
             self.synthesizer_agent, orchestrator_result.to_input_list()
         )
 
-        return synthesizer_result.final_output
+        return synthesizer_result
 
 async def main():
     msg = input("Hi! What would you like translated, and to which languages? ")
 
     # Run the entire orchestration in a single trace
     translator = TranslatorAgent()
-    result = await translator.run(msg)
-    print(f"Final result: {result}")
+    orchestrator_result = await Runner.run(translator.get_orchestrator_agent(), msg)
+    synthesizer_result = await translator.run_after(orchestrator_result)
+    print(f"Final result: {synthesizer_result.final_output}")
 
 
 if __name__ == "__main__":

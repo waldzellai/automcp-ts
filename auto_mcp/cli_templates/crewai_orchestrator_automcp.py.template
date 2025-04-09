@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.crewai_adapter import CrewAIAdapter
+from auto_mcp.adapters.crewai_orchestrator_adapter import create_crewai_orchestrator_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -20,20 +20,24 @@ class InputSchema(BaseModel):
     parameter2: str
     # Add more parameters as needed
 
-# Create an adapter for CrewAI
-adapter = CrewAIAdapter()
+name = "Your Orchestrator Name"
+description = "Description of what your orchestrator does"
 
-# Add your crew to the MCP server
-# Uncomment and modify this code when you have your crew class ready
-'''
-adapter.add_to_mcp(
-    mcp=mcp,
-    framework_obj=YourCrewClass,  # Replace with your actual crew class
-    name="Your Crew Name",        # Replace with your crew name
-    description="Description of what your crew does",
+# Uncomment and modify this code when you have your crew orchestrator instance ready
+```
+adapter = create_crewai_orchestrator_adapter(
+    orchestrator_instance=YourOrchestratorInstance,
+    name=name,
+    description=description,
     input_schema=InputSchema,
 )
-'''
+
+mcp.add_tool(
+    adapter,
+    name=name,
+    description=description,
+)
+```
 
 # Server entrypoints
 def serve_sse():

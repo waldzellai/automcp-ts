@@ -1,149 +1,92 @@
-from typing import Any, Callable, Type
-from pydantic import BaseModel
-from mcp.server.fastmcp import FastMCP
-import inspect
 import contextlib
 import io
 import asyncio
-from auto_mcp.core.adapter_base import BaseMCPAdapter
+import inspect
+from typing import Any, Callable, Type, Optional
+from pydantic import BaseModel
+from agents import Runner
 
-class OpenAIAdapter(BaseMCPAdapter):
-    """Adapter for converting OpenAI agents to MCP tools."""
-    
-    def convert_to_mcp_tool(
-        self,
-        framework_obj: Any,
+def create_openai_agent_adapter(
+        main_agent_instance: Any,
         name: str,
         description: str,
         input_schema: Type[BaseModel],
+        run_before_func: Optional[Callable] = None,
+        run_after_func: Optional[Callable] = None,
     ) -> Callable:
-        """
-        Convert an OpenAI agent to an MCP tool.
-        
-        Args:
-            framework_obj: The OpenAI agent to convert
-            name: The name of the MCP tool
-            description: The description of the MCP tool
-            input_schema: The Pydantic model class defining the input schema
-            
-        Returns:
-            An async callable function that can be used as an MCP tool
-        """
-        schema_fields = input_schema.model_fields
-        params_str = ", ".join(
-            f"{field_name}: {field_info.annotation.__name__ if hasattr(field_info.annotation, '__name__') else 'Any'}"
-            for field_name, field_info in schema_fields.items()
-        )
+    """
+    Convert OpenAI agents to an MCP tool, always running the main agent instance
+    with optional pre- and post-execution hooks for other agents or processes.
 
-        is_class = inspect.isclass(framework_obj)
-        is_function = inspect.isfunction(framework_obj) or inspect.ismethod(framework_obj)
+    Args:
+        main_agent_instance: The main agent instance that should always be executed.
+        name: The name of the MCP tool.
+        description: The description of the MCP tool.
+        input_schema: The Pydantic model class defining the input schema.
+        run_before_func: Optional custom function to execute before the main agent (default is None).
+        run_after_func: Optional custom function to execute after the main agent (default is None).
 
-        # Method detection
-        target_callable = None
-        is_run_async = False
+    Returns:
+        An async callable function that can be used as an MCP tool.
+    """
+    schema_fields = input_schema.model_fields
 
-        if is_class:
-            # Check for standard methods
-            for method_name in ['run', 'arun', 'chat', 'achat', 'invoke', 'ainvoke']:
-                if hasattr(framework_obj, method_name):
-                    method = getattr(framework_obj, method_name)
-                    if callable(method):
-                        is_run_async = inspect.iscoroutinefunction(method)
-                        target_callable = method_name
-                        break
-            if not target_callable:
-                raise ValueError(f"Class {framework_obj.__name__} must have one of: run, arun, chat, achat, invoke, or ainvoke methods")
-        elif is_function:
-            is_run_async = inspect.iscoroutinefunction(framework_obj)
-            target_callable = framework_obj
-        else:
-            raise ValueError(f"Unsupported framework object type: {type(framework_obj)}")
+    params_str = ", ".join(
+        f"{field_name}: {field_info.annotation.__name__ if hasattr(field_info.annotation, '__name__') else 'Any'}"
+        for field_name, field_info in schema_fields.items()
+    )
 
-        # Determine await keyword based on whether the target is async
-        await_kw = "await " if is_run_async else ""
+    # Start building the body of the dynamic function
+    body_str = f"""async def openai_agent({params_str}):
+        input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
+        input_dict = input_data.model_dump()
+        before_run_result = None
 
-        # Create appropriate async function body
-        if is_class:
-            body_str = f"""async def openai_tool({params_str}):
-                # Create input instance from parameters
-                input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
-                input_dict = input_data.model_dump()
-                
-                # Initialize the class
-                agent_instance = framework_obj()
-                
-                # Get the method to call
-                run_func = getattr(agent_instance, '{target_callable}')
-                
-                with contextlib.redirect_stdout(io.StringIO()):
-                    result = {await_kw}run_func(**input_dict)
-                
-                # Ensure result is in a consistent format
-                if isinstance(result, dict):
-                    return result
-                return {{"response": str(result)}}
-            """
-        elif is_function:
-            body_str = f"""async def openai_tool({params_str}):
-                # Create input instance from parameters
-                input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
-                input_dict = input_data.model_dump()
-                
-                with contextlib.redirect_stdout(io.StringIO()):
-                    result = {await_kw}framework_obj(**input_dict)
-                
-                # Ensure result is in a consistent format
-                if isinstance(result, dict):
-                    return result
-                return {{"response": str(result)}}
-            """
-        else:
-            raise ValueError("Internal error: Could not determine how to call the framework object.")
+        # Optionally apply run_before_func if provided
+        if 'run_before_func' in globals() and callable(run_before_func):
+            before_run_result = await run_before_func(*list(input_dict.values()))
 
-        namespace = {
-            "input_schema": input_schema,
-            "framework_obj": framework_obj,
-            "contextlib": contextlib,
-            "io": io,
-            "asyncio": asyncio,
-            "inspect": inspect
-        }
+        # Execute the main agent
+        with contextlib.redirect_stdout(io.StringIO()):
+            if before_run_result:
+                main_agent_result = await Runner.run(main_agent_instance, before_run_result.to_input_list())
+            else:
+                main_agent_result = await Runner.run(main_agent_instance, *list(input_dict.values()))
 
-        exec(body_str, namespace)
-        
-        openai_tool_async = namespace["openai_tool"]
-        
-        openai_tool_async.__name__ = name
-        openai_tool_async.__doc__ = description
-        
-        return openai_tool_async
-    
-    def add_to_mcp(
-        self,
-        mcp: FastMCP,
-        framework_obj: Any,
-        name: str,
-        description: str,
-        input_schema: Type[BaseModel],
-    ) -> None:
-        """
-        Add an OpenAI agent to an MCP server.
-        
-        Args:
-            mcp: The MCP server instance
-            framework_obj: The OpenAI agent to add
-            name: The name of the MCP tool
-            description: The description of the MCP tool
-            input_schema: The Pydantic model class defining the input schema
-        """
-        tool = self.convert_to_mcp_tool(
-            framework_obj=framework_obj,
-            name=name,
-            description=description,
-            input_schema=input_schema,
-        )
-        mcp.add_tool(
-            tool,
-            name=name,
-            description=description,
-        )
+            print("main_agent_result", main_agent_result)
+
+            # Optionally apply run_after_func if provided
+            if 'run_after_func' in globals() and callable(run_after_func):
+                result = await run_after_func(main_agent_result)
+            else:
+                result = main_agent_result
+
+            print(result)
+
+        return result.final_output
+    """
+
+    # Dynamically create the namespace
+    namespace = {
+        "input_schema": input_schema,
+        "main_agent_instance": main_agent_instance,
+        "contextlib": contextlib,
+        "io": io,
+        "asyncio": asyncio,
+        "inspect": inspect,
+        "Runner": Runner,
+    }
+
+    # Add the run_before_func and run_after_func to the namespace only if they are provided
+    if run_before_func:
+        namespace["run_before_func"] = run_before_func
+    if run_after_func:
+        namespace["run_after_func"] = run_after_func
+
+    # Execute the dynamic code to create the function in the namespace
+    exec(body_str, namespace)
+    openai_agent = namespace["openai_agent"]
+    openai_agent.__name__ = name
+    openai_agent.__doc__ = description
+
+    return openai_agent
