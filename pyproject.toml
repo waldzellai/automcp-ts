@@ -49,4 +49,4 @@ build-backend = "hatchling.build"
 packages = ["auto_mcp"]
 
 [project.scripts]
-auto_mcp = "auto_mcp.cli:main"
+automcp = "auto_mcp.cli:main"
