@@ -38,11 +38,10 @@ def create_crewai_agent_adapter(
             from crewai import Crew
             
             inputs = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
-            input_dict = inputs.model_dump()
             
             # Create the agent and task instances
-            agent = agent_instance(**input_dict)
-            task = task_instance(**input_dict)
+            agent = agent_instance
+            task = task_instance
             
             # Create a simple crew with the single agent and task
             crew = Crew(
@@ -53,9 +52,9 @@ def create_crewai_agent_adapter(
             
             # Run the crew and capture the output
             with contextlib.redirect_stdout(io.StringIO()):
-                result = crew.kickoff()
+                result = crew.kickoff(inputs=inputs.model_dump())
             
-            return json.dumps({"result": result})
+            return result.model_dump_json()
         """
 
         # Create a namespace for the function
