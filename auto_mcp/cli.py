@@ -11,8 +11,6 @@ _TEMPLATE_DIR = _CLI_DIR / "cli_templates"
 def create_mcp_server_file(directory: Path, framework: str) -> None:
     """Create an mcp_server.py file in the specified directory using a template."""
     # LAZY HACK
-    if framework == 'pydantic':
-        framework = 'langgraph'
     template_file = _TEMPLATE_DIR / f"{framework}_automcp.py.template"
 
     if not template_file.exists():
