@@ -105,7 +105,7 @@ def main():
         "--framework",
         choices=[
             "crewai_orchestrator", "langgraph", "pydantic", "llamaindex", 
-            "function", "openai", "crewai_tool", "langchain_tool", "crewai_agent",
+            "openai", "crewai_tool", "langchain_tool", "crewai_agent",
             "mcp_agent"
         ],
         required=True,
