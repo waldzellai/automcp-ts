@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.openai_adapter import create_openai_agent_adapter
+from auto_mcp.adapters.openai_adapter import create_openai_agent_adapter, create_openai_orchestrator_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -24,7 +24,14 @@ class InputSchema(BaseModel):
 # Add your OpenAI agent to the MCP server
 # Uncomment and modify this code when you have your agent ready
 '''
-create_openai_agent_adapter(
+adapter = create_openai_agent_adapter(
+    agent_instance=Instance of the agent to run,  # Replace with your actual OpenAI agent instance
+    name="Your OpenAI Agent Name",  # Replace with your agent name
+    description="Description of what your OpenAI agent does",
+    input_schema=InputSchema,
+)
+
+adpater = create_openai_orchestrator_adapter(
     run_after_func=Function to run after,
     run_before_func=Function to run before,
     main_agent_instance=Instance of the main agent to run,  # Replace with your actual OpenAI agent instance
