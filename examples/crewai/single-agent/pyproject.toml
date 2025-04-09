@@ -1,0 +1,12 @@
+[project]
+name = "single-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "crewai>=0.108.0",
+    "crewai-tools>=0.40.0",
+    "pydantic>=2.11.2",
+    "auto-mcp @ git+https://github.com/NapthaAI/auto-mcp.git@dev/crewai",
+]
