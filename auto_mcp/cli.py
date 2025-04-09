@@ -105,10 +105,11 @@ def main():
         "--framework",
         choices=[
             "crewai", "langgraph", "pydantic", "llamaindex", 
-            "function", "openai", "crewai_tool", "langchain_tool"
+            "function", "openai", "crewai_tool", "langchain_tool", 
+            "mcp_agent"
         ],
         required=True,
-        help="Agent framework to use (crewai, langgraph, pydantic, llamaindex, function, openai, crewai_tool, langchain_tool)"
+        help="Agent framework to use (crewai, langgraph, pydantic, llamaindex, function, openai, crewai_tool, langchain_tool, mcp_agent)"
     )
     init_parser.set_defaults(func=init_command)
 
