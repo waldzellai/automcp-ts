@@ -1,0 +1,22 @@
+{
+    "mcpServers": {
+        "crew-name-stdio": {
+            "type": "stdio",
+            "command": "/path/to/your/.venv/bin/uv",
+            "args": [
+                "--directory",
+                "/path/to/your/project_dir",
+                "run",
+                "serve_stdio"
+            ],
+            "env": {
+                "OPENAI_API_KEY": "sk-",
+                "SERPER_API_KEY": ""
+            }
+        },
+        "crew-name-sse": {
+            "type": "sse",
+            "url": "http://localhost:8000/sse"
+        }
+    }
+}

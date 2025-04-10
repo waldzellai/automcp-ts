@@ -1,0 +1,31 @@
+[project]
+name = "mcp-project"
+version = "0.1.0"
+description = "A project with MCP server integration"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain-openai==0.2.14",
+    "langchain==0.3.20",
+    "langgraph==0.3.25",
+    "mcp>=1.6.0",
+    "pydantic>=2.11.1",
+    "uv>=0.6.6",
+    "mcp-agent",
+    "automcp @ git+https://github.com/NapthaAI/automcp.git@dev/crewai",
+]
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.scripts]
+serve_stdio = "run_automcp:serve_stdio"
+serve_sse = "run_automcp:serve_sse"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+include = [ "run_automcp.py",]
+packages = [ ".",]
+exclude = [ "__pycache__", "*.pyc", ".pytest_cache", ".ruff_cache",]

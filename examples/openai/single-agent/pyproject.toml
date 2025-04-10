@@ -1,0 +1,29 @@
+[project]
+name = "openai-spanish-agent-mcp-project"
+version = "0.1.0"
+description = "An openai agent project with MCP server integration"
+requires-python = ">=3.10"
+dependencies = [
+    "automcp",
+    "openai-agents>=0.0.9",
+    "pyyaml>=6.0.2",
+]
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+include = [ "/run_automcp.py",]
+packages = [ ".",]
+exclude = [ "__pycache__", "*.pyc", ".pytest_cache", ".ruff_cache",]
+
+[project.scripts]
+serve_stdio = "run_automcp:serve_stdio"
+serve_sse = "run_automcp:serve_sse"
+
+[tool.uv.sources]
+automcp = { path = "../../../" }
