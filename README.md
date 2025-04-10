@@ -48,7 +48,7 @@ Generate the MCP server files via CLI with one of the following flags (crewai_or
 automcp init -f crewai_orchestrator
 ```
 
-Edit the generated `run_automcp.py` file to configure your agent:
+Edit the generated `run_mcp.py` file to configure your agent:
 
 ```python
 # Replace these imports with your actual agent classes
@@ -82,7 +82,7 @@ automcp serve -t sse
 
 When you run `automcp init -f <FRAMEWORK>`, the following file is generated:
 
-### run_automcp.py
+### run_mcp.py
 
 This is the main file that sets up and runs your MCP server. It contains:
 
@@ -118,7 +118,7 @@ cd examples/crewai/marketing_agents
 # Generate the MCP server files (use the appropriate framework)
 automcp init -f crewai_orchestrator
 
-# Edit the generated run_automcp.py file to import and configure the example agent
+# Edit the generated run_mcp.py file to import and configure the example agent
 # (See the specific example's README for details)
 
 # Add a .env file with necessary environmental variables
@@ -130,12 +130,12 @@ automcp serve -t sse
 Each example follows the same workflow as a regular project:
 
 1. Run `automcp init -f <FRAMEWORK>` to generate the server files
-2. Edit `run_automcp.py` to import and configure the example agent
+2. Edit `run_mcp.py` to import and configure the example agent
 3. Add a .env file with necessary environmental variables
 4. Install dependencies and serve using `automcp serve -t sse`
 
 ### CrewAI example
-Here's what a typical configured `run_automcp.py` looks like for a CrewAI example:
+Here's what a typical configured `run_mcp.py` looks like for a CrewAI example:
 
 ```python
 import warnings
@@ -218,8 +218,8 @@ automcp serve -t stdio    # STDIO transport
 automcp serve -t sse      # SSE transport
 
 # Or run the Python file directly
-python run_automcp.py       # STDIO transport
-python run_automcp.py sse   # SSE transport
+python run_mcp.py       # STDIO transport
+python run_mcp.py sse   # SSE transport
 
 # Or with uv run (if configured in pyproject.toml)
 uv run serve_stdio
@@ -229,15 +229,15 @@ uv run serve_sse
 **Note about transport modes:**
 - **STDIO**: You don't need to run the server manually - it will be started by the client (Cursor)
 - **SSE**: This is a two-step process:
-  1. Start the server separately: `python run_automcp.py sse` or `automcp serve -t sse`
+  1. Start the server separately: `python run_mcp.py sse` or `automcp serve -t sse`
   2. Add the mcp.json configuration to connect to the running server
 
 If you want to use the `uv run` commands, add the following to your `pyproject.toml`:
 
 ```toml
 [tool.uv.scripts]
-serve_stdio = "python run_automcp.py"
-serve_sse = "python run_automcp.py sse"
+serve_stdio = "python run_mcp.py"
+serve_sse = "python run_mcp.py sse"
 ```
 
 ## 🔌 Using with MCP Clients
@@ -268,7 +268,7 @@ To integrate with Cursor IDE, create a `.cursor` folder in your project root and
             "type": "stdio",
             "command": "/absolute/path/to/your/.venv/bin/python",
             "args": [
-                "/absolute/path/to/your/project_dir/run_automcp.py"
+                "/absolute/path/to/your/project_dir/run_mcp.py"
             ],
             "env": {
                 "OPENAI_API_KEY": "sk-",

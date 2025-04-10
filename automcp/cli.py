@@ -6,12 +6,12 @@ from pathlib import Path
 
 # Determine the location of the templates relative to this file
 _CLI_DIR = Path(__file__).parent
-_TEMPLATE_FILE = _CLI_DIR / "cli_templates/run_automcp.py.template"
+_TEMPLATE_FILE = _CLI_DIR / "cli_templates/run_mcp.py.template"
 _CONFIG_FILE = _CLI_DIR / "cli_templates/framework_config.yaml"
 
 
 def create_mcp_server_file(directory: Path, framework: str) -> None:
-    """Create an run_automcp.py file in the specified directory using a template."""
+    """Create a run_mcp.py file in the specified directory using a template."""
     # Check if the unified template exists
     if not _TEMPLATE_FILE.exists():
         raise ValueError(f"Unified template file not found at: {_TEMPLATE_FILE}")
@@ -63,7 +63,7 @@ def create_mcp_server_file(directory: Path, framework: str) -> None:
     content = content.replace("{{adapter_variable_name}}", adapter_variable_name)
     
     # Write the file
-    file_path = directory / "run_automcp.py"
+    file_path = directory / "run_mcp.py"
     with open(file_path, "w") as f:
         f.write(content)
     
@@ -74,7 +74,7 @@ def init_command(args) -> None:
     """Create new MCP server files in the current directory."""
     current_dir = Path.cwd()
 
-    # Create run_automcp.py
+    # Create run_mcp.py
     try:
         create_mcp_server_file(current_dir, args.framework)
     except ValueError as e:
@@ -85,7 +85,7 @@ def init_command(args) -> None:
         sys.exit(1)
 
     print("\nSetup complete! Next steps:")
-    print(f"1. Edit {current_dir / 'run_automcp.py'} to import and configure your {args.framework} agent/crew/graph")
+    print(f"1. Edit {current_dir / 'run_mcp.py'} to import and configure your {args.framework} agent/crew/graph")
     print("2. Add a .env file with necessary environment variables")
     print("3. Run your MCP server using one of these commands:")
     print("   - automcp serve         # For STDIO transport (default)")
@@ -99,9 +99,9 @@ def serve_command(args) -> None:
     print(f"Running AutoMCP server with {args.transport} transport")
     current_dir = Path.cwd()
     
-    automcp_file = current_dir / "run_automcp.py"
+    automcp_file = current_dir / "run_mcp.py"
     if not automcp_file.exists():
-        raise ValueError("run_automcp.py not found in current directory")
+        raise ValueError("run_mcp.py not found in current directory")
     
     venv_dir = current_dir / ".venv"
     if not venv_dir.exists():
