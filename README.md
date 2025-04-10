@@ -1,14 +1,17 @@
 # automcp
 
-Automatically convert agent frameworks to MCP servers.
-
 ## 🚀 Overview
 
-automcp is a tool that helps you convert existing AI agent frameworks into [MCP](https://modelcontextprotocol.io/introduction) servers with minimal effort. This allows your agents to be accessible via standardized interfaces used by tools like Cursor and Claude Desktop.
+automcp allows you to easily convert tool, agents and orchestrators from existing agent frameworks [MCP](https://modelcontextprotocol.io/introduction) servers, that can then be accessed by standardized interfaces via clients like Cursor and Claude Desktop.
 
-Currently supported frameworks:
+We currently support deployment of agents, tools, and orchestrators as MCP servers for the following agent frameworks:
 
-- CrewAI
+1. CrewAI
+2. LangGraph
+3. Llama Index
+4. OpenAI Agents SDK
+5. Pydantic AI
+6. mcp-agent
 
 ## 🔧 Installation
 
@@ -24,6 +27,8 @@ Or install from source:
 ```bash
 git clone https://github.com/napthaai/automcp.git
 cd automcp
+uv venv 
+source .venv/bin/activate
 pip install -e .
 ```
 
@@ -37,10 +42,10 @@ Navigate to your project directory with your agent implementation:
 cd your-project-directory
 ```
 
-Generate the MCP server files (currently supported frameworks: `crewai`):
+Generate the MCP server files via CLI with one of the following flags (crewai_orchestrator, crewai_agent, crewai_tool, langgraph_agent, langchain_tool, llamaindex_agent, openai_agent, pydantic_agent, mcp_agent):
 
 ```bash
-automcp init -f crewai
+automcp init -f crewai_orchestrator
 ```
 
 Edit the generated `run_automcp.py` file to configure your agent:
@@ -101,20 +106,22 @@ The repository includes examples for each supported framework:
 
 ```bash
 # Clone the repository
-git clone https://github.com/napthaai/automcp.git
+git clone https://github.com/NapthaAI/automcp.git
 cd automcp
 
-# Install auto-mcp in development mode
+# Install automcp in development mode
 pip install -e .
 
 # Navigate to an example directory
 cd examples/crewai/marketing_agents
 
 # Generate the MCP server files (use the appropriate framework)
-automcp init -f crewai
+automcp init -f crewai_orchestrator
 
 # Edit the generated run_automcp.py file to import and configure the example agent
 # (See the specific example's README for details)
+
+# Add a .env file with necessary environmental variables
 
 # Install dependencies and run
 automcp serve -t sse
@@ -124,17 +131,14 @@ Each example follows the same workflow as a regular project:
 
 1. Run `automcp init -f <FRAMEWORK>` to generate the server files
 2. Edit `run_automcp.py` to import and configure the example agent
-3. Install dependencies and serve using `automcp serve -t sse`
+3. Add a .env file with necessary environmental variables
+4. Install dependencies and serve using `automcp serve -t sse`
 
 ### CrewAI example
 Here's what a typical configured `run_automcp.py` looks like for a CrewAI example:
 
 ```python
 import warnings
-import os
-import sys
-import io
-import contextlib
 from typing import Any
 from automcp.adapters.crewai import create_crewai_orchestrator_adapter
 from pydantic import BaseModel
@@ -144,20 +148,18 @@ mcp = FastMCP("MCP Server")
 
 warnings.filterwarnings("ignore")
 
-from crew import JobPostingCrew
+from crew import MarketingPostsCrew
 
 class InputSchema(BaseModel):
-    company_domain: str
-    company_description: str
-    hiring_needs: str
-    specific_benefits: str
+    project_description: str
+    customer_domain: str
 
-name = "job_posting_crew"
-description = "A crew that posts job listings to a job board"
+name = "marketing_posts_crew"
+description = "A crew that posts marketing posts to a social media platform"
 
 # Create an adapter for crewai_orchestrator
 mcp_crewai_orchestrator = create_crewai_orchestrator_adapter(
-    orchestrator_instance=JobPostingCrew().crew(),
+    orchestrator_instance=MarketingPostsCrew().crew(),
     name=name,
     description=description,
     input_schema=InputSchema,
@@ -174,6 +176,9 @@ def serve_sse():
 
 def serve_stdio():
     # Redirect stderr to suppress warnings that bypass the filters
+    import os
+    import sys
+
     class NullWriter:
         def write(self, *args, **kwargs):
             pass
@@ -322,10 +327,10 @@ Push your project to GitHub and use:
 
 Want to add support for a new agent framework? Here's how:
 
-1. Create a new adapter file in auto_mcp/adapters/ (or add to an existing framework file):
+1. Create a new adapter file in automcp/adapters/ (or add to an existing framework file):
 
 ```python
-# auto_mcp/adapters/framework.py
+# automcp/adapters/framework.py
 import json
 import contextlib
 import io
@@ -352,11 +357,11 @@ def create_framework_agent_adapter(
     # Create the function body that constructs the input schema
     # Note: You may need to adjust the method calls (kickoff, model_dump_json)
     # to match your framework's specific API
-    body_str = f"""def run_orchestrator({params_str}):
+    body_str = f"""def run_agent({params_str}):
         inputs = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
         with contextlib.redirect_stdout(io.StringIO()):
-            result = orchestrator_instance.kickoff(inputs=inputs.model_dump())
-        return result.model_dump_json()
+            result = agent_instance.framework_specific_run(inputs=inputs.model_dump())
+        return result.framework_specific_result()
     """
 
     # Create a namespace for the function
@@ -387,7 +392,5 @@ def create_framework_agent_adapter(
 
 - When working with STDIO transport, be careful with print statements in your agent code as they can corrupt the protocol
 - The MCP Inspector can be used for debugging: `npx @modelcontextprotocol/inspector`
-- Environment variables should be set before running the server for SSE
-- For projects requiring environment variables, create a `.env` file in your project directory
 - Remember that for STDIO mode, the client (like Cursor) will start the server for you
 - For SSE mode, you need to manually start the server and then configure the client to connect to it
