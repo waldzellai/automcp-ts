@@ -17,9 +17,6 @@ Install from PyPI:
 ```bash
 # Basic installation
 pip install automcp
-
-# With framework-specific dependencies
-pip install automcp[crewai]
 ```
 
 Or install from source:

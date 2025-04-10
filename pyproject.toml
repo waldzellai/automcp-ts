@@ -11,36 +11,6 @@ dependencies = [
     "toml>=0.10.0"
 ]
 
-[project.optional-dependencies]
-crewai = [
-    "crewai>=0.108.0",
-    "crewai-tools>=0.38.1",
-]
-
-langgraph = [
-    "langgraph==0.3.25",
-    "langchain==0.3.20",
-    "langchain-openai==0.2.14"
-]
-
-llamaindex = [
-    "llama-index>=0.12.28"
-]
-
-openai = [
-    "openai-agents>=0.0.9"
-]
-
-all = [
-    "crewai>=0.108.0",
-    "crewai-tools>=0.38.1",
-    "langgraph==0.3.25",
-    "langchain==0.3.20",
-    "langchain-openai==0.2.14",
-    "llama-index>=0.12.28",
-    "openai-agents>=0.0.9"
-]
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
