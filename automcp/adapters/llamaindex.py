@@ -2,10 +2,11 @@ import contextlib
 import io
 import asyncio
 import inspect
-from typing import Any, Callable, Type, Optional
+from typing import Any, Callable, Type
 from pydantic import BaseModel
 from llama_index.core.workflow import Context
 from automcp.adapters.utils import ensure_serializable
+
 def create_llamaindex_agent_adapter(
     agent_instance: Any,
     name: str,
