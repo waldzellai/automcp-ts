@@ -66,21 +66,8 @@ class SelfDiscoverAgent:
         graph.add_edge("reason", END)
         self.graph = graph.compile()
 
-    async def run(self, task_description: str, reasoning_modules: str) -> Dict[str, Any]:
-        """Runs the agent asynchronously."""
-        initial_state = {
-            "task_description": task_description,
-            "reasoning_modules": reasoning_modules
-        }
-        
-        final_state = await self.graph.ainvoke(initial_state)
-        
-        return {
-            "selected_modules": final_state.get("selected_modules"),
-            "adapted_modules": final_state.get("adapted_modules"),
-            "reasoning_structure": final_state.get("reasoning_structure"),
-            "answer": final_state.get("answer")
-        }
+    def get_agent(self):
+        return self.graph
 
 # Example usage
 if __name__ == "__main__":
@@ -133,8 +120,8 @@ if __name__ == "__main__":
         reasoning_modules_str = "\n".join(reasoning_modules)
 
         # Run the agent
-        agent = SelfDiscoverAgent()
-        result = await agent.run(task_example, reasoning_modules_str)
+        agent = SelfDiscoverAgent().get_agent()
+        result = await agent.ainvoke({"task_description": task_example, "reasoning_modules": reasoning_modules_str})
         print("Results:", result)
 
     # Run the async main function

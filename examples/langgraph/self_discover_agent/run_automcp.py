@@ -1,7 +1,7 @@
 import warnings
 from typing import Any
+from automcp.adapters.langgraph import create_langgraph_graph_adapter
 from pydantic import BaseModel, Field
-from auto_mcp.adapters.langgraph_adapter import LangGraphAdapter
 from mcp.server.fastmcp import FastMCP
 from main import SelfDiscoverAgent
 
@@ -11,28 +11,26 @@ mcp = FastMCP("Self Discover Agent MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace this with your actual LangGraph graph/class/function
-# from your_module import your_langgraph_object
-
-# Define the input schema for your graph/agent
+# Define the input schema for your langgraph_agent
 class InputSchema(BaseModel):
     task_description: str
     reasoning_modules: str = Field(default="1. How could I devise an experiment to help solve that problem?\n2. How can I simplify the problem so that it is easier to solve?")
 
-agent = SelfDiscoverAgent
-adapter = LangGraphAdapter()
 
-# Add your LangGraph object to the MCP server
-# Uncomment and modify this code when you have your graph/agent ready
-
-adapter.add_to_mcp(
-    mcp=mcp,
-    framework_obj=agent,  # Now passing an instance instead of the class
-    name="Self Discover Agent",    # Replace with your agent/graph name
-    description="A self-discover agent that can reason about a task and select the best reasoning modules to use",
+# Create an adapter for langgraph_agent
+mcp_langgraph_agent = create_langgraph_graph_adapter(
+    graph_instance=SelfDiscoverAgent().get_agent(),
+    name="Self Discover Agent",
+    description="A self-discover agent that can help you discover new things",
     input_schema=InputSchema,
 )
 
+
+mcp.add_tool(
+    mcp_langgraph_agent,
+    name="Self Discover Agent",
+    description="A self-discover agent that can help you discover new things",
+)
 
 # Server entrypoints
 def serve_sse():
@@ -69,4 +67,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:
-        serve_stdio() 
+        serve_stdio()
