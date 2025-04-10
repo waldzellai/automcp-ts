@@ -19,7 +19,7 @@ Install from PyPI:
 
 ```bash
 # Basic installation
-pip install automcp
+pip install naptha-automcp
 ```
 
 Or install from source:

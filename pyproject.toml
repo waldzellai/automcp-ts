@@ -1,5 +1,5 @@
 [project]
-name = "auto-mcp"
+name = "naptha-automcp"
 version = "0.1.0"
 description = "Convert tool, agents and orchestrators from existing agent frameworks to MCP servers"
 readme = "README.md"
@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/NapthaAI/auto-mcp"
+"Homepage" = "https://github.com/NapthaAI/automcp"
 
 [build-system]
 requires = ["hatchling"]
