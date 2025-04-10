@@ -76,7 +76,7 @@ frameworks:
     import_comment: "# from your_module import your_langgraph_agent"
     adapter_definition: |
       mcp_langgraph_agent = create_langgraph_graph_adapter(
-          agent_instance=YourLangGraphAgentInstance,
+          graph_instance=YourLangGraphAgentInstance,
           name=name,
           description=description,
           input_schema=InputSchema,
