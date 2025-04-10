@@ -155,19 +155,20 @@ class QueryAgent:
         return self.agent
 
 async def main():
-    agent = QueryAgent()
+    agent = QueryAgent().get_agent()
     
     # Example queries
     queries = [
         "Tell me about the arts and culture of the city with the highest population.",
         "Tell me about the history of Berlin",
-        "Can you give me the country corresponding to each city?"
+        "Can you give me the country corresponding to each city you know?"
     ]
     
     for query in queries:
         print(f"\nQuery: {query}")
-        result = await agent.run(query)
-        print(f"Response: {result['response']}")
+        handler = agent.run(query, ctx=Context(agent))
+        response = await handler
+        print(f"Response: {response}")
 
 if __name__ == "__main__":
     asyncio.run(main())
