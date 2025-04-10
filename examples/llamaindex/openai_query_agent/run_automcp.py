@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from automcp.adapters.llamaindex_adapter import create_llamaindex_agent_adapter
+from automcp.adapters.llamaindex import create_llamaindex_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 from main import QueryAgent
@@ -11,23 +11,26 @@ mcp = FastMCP("LlamaIndex City Information Agent MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# Define the input schema for your agent/query engine
+
+# Define the input schema for your llamaindex_agent
 class InputSchema(BaseModel):
     query: str
 
-query_agent = QueryAgent()
+name = "City Information Agent"
+description = "An agent that can answer questions about cities using both SQL and vector search capabilities"
 
-adapter = create_llamaindex_agent_adapter(
-    agent_instance=query_agent.get_agent(),
+# Create an adapter for llamaindex_agent
+mcp_llamaindex_agent = create_llamaindex_agent_adapter(
+    agent_instance=QueryAgent().get_agent(),
     name="City Information Agent",
     description="An agent that can answer questions about cities using both SQL and vector search capabilities",
     input_schema=InputSchema,
 )
 
 mcp.add_tool(
-    adapter,
-    name="City Information Agent",
-    description="An agent that can answer questions about cities using both SQL and vector search capabilities",
+    mcp_llamaindex_agent,
+    name=name,
+    description=description
 )
 
 # Server entrypoints
@@ -65,4 +68,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:
-        serve_stdio() 
+        serve_stdio()
