@@ -88,7 +88,7 @@ def init_command(args) -> None:
     print(f"1. Edit {current_dir / 'run_automcp.py'} to import and configure your {args.framework} agent/crew/graph")
     print("2. Run your MCP server using one of these commands:")
     print("   - automcp serve         # For STDIO transport (default)")
-    print("   - automcp serve sse     # For SSE transport")
+    print("   - automcp serve -t sse     # For SSE transport")
     print("   - uv run serve_stdio           # Using the script entry point (if using uv)")
     print("   - uv run serve_sse             # Using the script entry point (if using uv)")
 
@@ -113,7 +113,7 @@ def serve_command(args) -> None:
             # TODO: remove --no-cache once testing phase is done
             subprocess.run(["uv", "sync", "--no-cache"], check=True)
             
-            # This is to install the auto-mcp package
+            # This is to install the automcp package
             requirements_file = current_dir / "requirements.txt"
             if requirements_file.exists():
                 subprocess.run(["uv", "add", "-r", str(requirements_file)], check=True)
