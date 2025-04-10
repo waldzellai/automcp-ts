@@ -7,7 +7,7 @@ import inspect
 import contextlib
 import io
 import asyncio # Keep asyncio import
-from auto_mcp.adapters.utils import ensure_serializable
+from automcp.adapters.utils import ensure_serializable
 
 
 def create_langgraph_adapter(

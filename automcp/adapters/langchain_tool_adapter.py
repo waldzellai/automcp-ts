@@ -5,7 +5,7 @@ import contextlib
 import io
 import asyncio # Keep asyncio import
 from typing import Optional
-from auto_mcp.adapters.utils import ensure_serializable
+from automcp.adapters.utils import ensure_serializable
 
 POSSIBLE_RUN_METHODS = ["run", "results", "load"]
 
