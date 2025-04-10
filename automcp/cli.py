@@ -146,7 +146,7 @@ def load_available_frameworks():
         return [
             "crewai_orchestrator", "crewai_agent", "crewai_tool",
             "langchain_tool", "mcp_agent", "langgraph_agent", "pydantic_agent",
-            "llamaindex_agent", "openai_agent", "openai_orchestrator"
+            "llamaindex_agent", "openai_agent"
         ]
 
 

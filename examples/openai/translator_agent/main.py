@@ -56,29 +56,12 @@ class TranslatorAgent:
                 ),
             ],
         )
-
-    def intitalize_synthesizer_agent(self):
-        self.synthesizer_agent = Agent(
-            name="synthesizer_agent",
-            instructions="You inspect translations, correct them if needed, and produce a final concatenated response.",
-        )
     
     def intitalize_agents(self):
         self.intitalize_orchestrator_agent()
-        self.intitalize_synthesizer_agent()
 
     def get_orchestrator_agent(self):
         return self.orchestrator_agent
-
-    def get_synthesizer_agent(self):
-        return self.synthesizer_agent
-    
-    async def run_after(self, orchestrator_result: str):
-        synthesizer_result = await Runner.run(
-            self.synthesizer_agent, orchestrator_result.to_input_list()
-        )
-
-        return synthesizer_result
 
 async def main():
     msg = input("Hi! What would you like translated, and to which languages? ")
@@ -86,9 +69,7 @@ async def main():
     # Run the entire orchestration in a single trace
     translator = TranslatorAgent()
     orchestrator_result = await Runner.run(translator.get_orchestrator_agent(), msg)
-    synthesizer_result = await translator.run_after(orchestrator_result)
-    print(f"Final result: {synthesizer_result.final_output}")
-
+    print(f"Final result: {orchestrator_result.final_output}")
 
 if __name__ == "__main__":
     asyncio.run(main())

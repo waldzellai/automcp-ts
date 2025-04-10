@@ -15,12 +15,7 @@ class SpanishAgent:
     def get_agent(self):
         return self.agent
 
-async def run_spanish_agent(msg: str):
-    spanish_agent = SpanishAgent()
-    result = await Runner.run(spanish_agent.get_agent(), msg)
-    return result.final_output
-
 if __name__ == "__main__":
     msg = input("Hi! What would you like translated? ")
-    result = asyncio.run(run_spanish_agent(msg))
-    print(result)
+    result = asyncio.run(Runner.run(SpanishAgent().get_agent(), msg))
+    print(result.final_output)

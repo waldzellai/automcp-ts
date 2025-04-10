@@ -114,17 +114,4 @@ frameworks:
           description=description,
           input_schema=InputSchema,
       )
-
-  openai_orchestrator:
-    adapter_import: automcp.adapters.openai import create_openai_orchestrator_adapter
-    import_comment: "# from your_module import YourOpenAIAgent"
-    adapter_definition: |
-      mcp_openai_orchestrator = create_openai_orchestrator_adapter(
-          run_after_func=Function to run after,
-          run_before_func=Function to run before,
-          main_agent_instance=instance_of_your_orchestrator_class,
-          name=name,
-          description=description,
-          input_schema=InputSchema,
-      )
           
