@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from automcp.adapters.pydantic_adapter import create_pydantic_agent_adapter
+from automcp.adapters.pydantic import create_pydantic_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -10,16 +10,17 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
+# You'll need to replace these imports with your actual pydantic_agent objects
 from main import weather_agent
 
-# Define the input schema for your crew
+# Define the input schema for your pydantic_agent
 class InputSchema(BaseModel):
     query: str
 
 name = "weather_agent"
-description = "Get the weather in a location"
+description = "A weather agent that can help you with the weather"
 
-# Create an adapter for Langchain
+# Create an adapter for pydantic_agent
 mcp_pydantic_agent = create_pydantic_agent_adapter(
     agent_instance=weather_agent,
     name=name,
@@ -68,4 +69,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:
-        serve_stdio() 
+        serve_stdio()
