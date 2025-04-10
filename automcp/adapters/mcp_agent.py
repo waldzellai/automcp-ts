@@ -17,7 +17,7 @@ def create_mcp_agent_adapter(
     Convert a MCP agent instance to an MCP tool with proper isolation from MCP's task management.
     """
     # Define the wrapper function
-    async def wrapper(**kwargs):
+    async def run_agent(**kwargs):
         # Create input object from schema
         input_data = input_schema(**kwargs)
         
@@ -70,8 +70,8 @@ def create_mcp_agent_adapter(
         )
         params.append(param)
     
-    wrapper.__signature__ = inspect.Signature(parameters=params)
-    wrapper.__name__ = name
-    wrapper.__doc__ = description
+    run_agent.__signature__ = inspect.Signature(parameters=params)
+    run_agent.__name__ = name
+    run_agent.__doc__ = description
     
-    return wrapper
+    return run_agent

@@ -1,21 +1,23 @@
 from typing import Any, Callable, Type
 from pydantic import BaseModel
-import asyncio
+import inspect
 import contextlib
 import io
+import asyncio
+from automcp.adapters.utils import ensure_serializable
 
 
-def create_pydantic_agent_adapter(
-    agent_instance: Any,
+def create_langgraph_graph_adapter(
+    graph_instance: Any,
     name: str,
     description: str,
     input_schema: Type[BaseModel],
 ) -> Callable:
     """
-    Convert a Pydantic agent instance to an MCP tool, making it async.
+    Convert a graph object to an MCP tool, making it async.
 
     Args:
-        agent_instance: The Pydantic agent instance
+        graph_instance: The graph object
         name: The name of the MCP tool
         description: The description of the MCP tool
         input_schema: The Pydantic model class defining the input schema
@@ -23,51 +25,43 @@ def create_pydantic_agent_adapter(
     Returns:
         An awaitable callable function that can be used as an MCP tool
     """
-    # Get the input schema fields to preserve the signature
     schema_fields = input_schema.model_fields
-    
-    # Create the parameter string for the function signature
     params_str = ", ".join(
         f"{field_name}: {field_info.annotation.__name__ if hasattr(field_info.annotation, '__name__') else 'Any'}"
         for field_name, field_info in schema_fields.items()
     )
 
     # Create the function body with proper async/await
-    body_str = f"""async def adapted_agent({params_str}):
+    body_str = f"""async def run_graph({params_str}):
         # Create the input object
         input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
+        input_dict = input_data.model_dump()
         
         # Call the async run method
         with contextlib.redirect_stdout(io.StringIO()):
-            result = await agent_instance.run(input_data.query)
+            result = await graph_instance.ainvoke(input_dict)
+            result = ensure_serializable(result)
         
-        # Process the result
-        if hasattr(result, 'data'):
-            return result.data
-        elif hasattr(result, 'raw'):
-            return result.raw
-        else:
-            return result
+        return result
     """
 
-    # Create a namespace for the exec
     namespace = {
         "input_schema": input_schema,
-        "agent_instance": agent_instance,
-        "asyncio": asyncio,
+        "graph_instance": graph_instance,
         "contextlib": contextlib,
         "io": io,
+        "asyncio": asyncio, 
+        "inspect": inspect,
+        "ensure_serializable": ensure_serializable
     }
-    
-    # Execute the function definition
-    exec(body_str, namespace)
-    
-    # Get the created function
-    adapted_agent = namespace["adapted_agent"]
-    
-    # Add metadata
-    adapted_agent.__name__ = name
-    adapted_agent.__doc__ = description
-    
-    return adapted_agent
 
+    exec(body_str, namespace)
+
+    # Get the created async function
+    run_graph = namespace["run_graph"]
+
+    # Add proper function metadata
+    run_graph.__name__ = name
+    run_graph.__doc__ = description
+
+    return run_graph

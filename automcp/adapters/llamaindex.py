@@ -27,7 +27,7 @@ def create_llamaindex_agent_adapter(
         for field_name, field_info in schema_fields.items()
     )
     
-    body_str = f"""async def llamaindex_agent({params_str}):
+    body_str = f"""async def run_agent({params_str}):
         input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
         input_dict = input_data.model_dump()
         ctx = Context(agent_instance)
@@ -49,8 +49,8 @@ def create_llamaindex_agent_adapter(
     }
 
     exec(body_str, namespace)
-    llamaindex_agent = namespace["llamaindex_agent"]
-    llamaindex_agent.__name__ = name
-    llamaindex_agent.__doc__ = description
+    run_agent = namespace["run_agent"]
+    run_agent.__name__ = name
+    run_agent.__doc__ = description
 
-    return llamaindex_agent
+    return run_agent

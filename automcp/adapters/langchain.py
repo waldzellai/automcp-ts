@@ -1,9 +1,9 @@
-from typing import Any, Callable, Type, Union, Dict, List
+from typing import Any, Callable, Type
 from pydantic import BaseModel
 import inspect
 import contextlib
 import io
-import asyncio # Keep asyncio import
+import asyncio
 from typing import Optional
 from automcp.adapters.utils import ensure_serializable
 
@@ -62,7 +62,7 @@ def create_langchain_tool_adapter(
     await_kw = "await " if is_run_async else ""
 
     # Create appropriate async function body
-    body_str = f"""async def langchain_tool({params_str}):
+    body_str = f"""async def run_tool({params_str}):
             # Create input instance from parameters
             input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
             input_dict = input_data.model_dump()
@@ -88,11 +88,11 @@ def create_langchain_tool_adapter(
     exec(body_str, namespace)
 
     # Get the created async function
-    langchain_tool_async = namespace["langchain_tool"]
+    run_tool = namespace["run_tool"]
 
     # Add proper function metadata
-    langchain_tool_async.__name__ = name
-    langchain_tool_async.__doc__ = description
+    run_tool.__name__ = name
+    run_tool.__doc__ = description
 
-    return langchain_tool_async
+    return run_tool
 

@@ -27,7 +27,7 @@ def create_openai_agent_adapter(
         for field_name, field_info in schema_fields.items()
     )
 
-    body_str = f"""async def openai_agent({params_str}):
+    body_str = f"""async def run_agent({params_str}):
         input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
         input_dict = input_data.model_dump()
 
@@ -48,11 +48,11 @@ def create_openai_agent_adapter(
     }
 
     exec(body_str, namespace)
-    openai_agent = namespace["openai_agent"]
-    openai_agent.__name__ = name
-    openai_agent.__doc__ = description
+    run_agent = namespace["run_agent"]
+    run_agent.__name__ = name
+    run_agent.__doc__ = description
 
-    return openai_agent
+    return run_agent
 
 def create_openai_orchestrator_adapter(
         main_agent_instance: Any,
@@ -85,7 +85,7 @@ def create_openai_orchestrator_adapter(
     )
 
     # Start building the body of the dynamic function
-    body_str = f"""async def openai_orchestrator({params_str}):
+    body_str = f"""async def run_orchestrator({params_str}):
         input_data = input_schema({', '.join(f'{name}={name}' for name in schema_fields)})
         input_dict = input_data.model_dump()
         before_run_result = None
@@ -131,8 +131,8 @@ def create_openai_orchestrator_adapter(
 
     # Execute the dynamic code to create the function in the namespace
     exec(body_str, namespace)
-    openai_orchestrator = namespace["openai_orchestrator"]
-    openai_orchestrator.__name__ = name
-    openai_orchestrator.__doc__ = description
+    run_orchestrator = namespace["run_orchestrator"]
+    run_orchestrator.__name__ = name
+    run_orchestrator.__doc__ = description
 
-    return openai_orchestrator
+    return run_orchestrator
