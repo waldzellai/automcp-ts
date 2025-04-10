@@ -21,13 +21,13 @@ requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
 [project.scripts]
-serve_stdio = "run_automcp:serve_stdio"
-serve_sse = "run_automcp:serve_sse"
+serve_stdio = "run_mcp:serve_stdio"
+serve_sse = "run_mcp:serve_sse"
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-include = [ "run_automcp.py",]
+include = [ "run_mcp.py",]
 packages = [ ".",]
 exclude = [ "__pycache__", "*.pyc", ".pytest_cache", ".ruff_cache",]
