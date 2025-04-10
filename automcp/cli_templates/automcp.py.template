@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.crewai_orchestrator_adapter import create_crewai_orchestrator_adapter
+from {{adapter_import}}
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -10,34 +10,26 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace these imports with your actual crew class
-# from your_module import YourCrewClass
+# You'll need to replace these imports with your actual {{framework}} objects
+{{import_comment}}
 
-# Define the input schema for your crew
+# Define the input schema for your {{framework}}
 class InputSchema(BaseModel):
     # Replace these with your actual input parameters
-    parameter1: str
-    parameter2: str
+    query: str
     # Add more parameters as needed
 
-name = "Your Orchestrator Name"
-description = "Description of what your orchestrator does"
+name = "Your Agent Name"
+description = "Description of what your agent does"
 
-# Uncomment and modify this code when you have your crew orchestrator instance ready
-```
-adapter = create_crewai_orchestrator_adapter(
-    orchestrator_instance=YourOrchestratorInstance,
-    name=name,
-    description=description,
-    input_schema=InputSchema,
-)
+# Create an adapter for {{framework}}
+{{adapter_definition}}
 
 mcp.add_tool(
-    adapter,
+    {{adapter_variable_name}},
     name=name,
-    description=description,
+    description=description
 )
-```
 
 # Server entrypoints
 def serve_sse():
@@ -74,4 +66,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:
-        serve_stdio() 
+        serve_stdio()
