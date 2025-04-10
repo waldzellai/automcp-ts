@@ -33,6 +33,18 @@ frameworks:
           input_schema=InputSchema,
       )
 
+  llamaindex_tool:
+    adapter_import: automcp.adapters.llamaindex import create_llamaindex_tool_adapter
+    import_comment: "# from your_module import your_tool_instance"
+    adapter_definition: |
+      mcp_llamaindex_tool = create_llamaindex_tool_adapter(
+          tool_instance=YourToolInstance,
+          name=name,
+          description=description,
+          input_schema=InputSchema,
+          is_async_tool=True, # or False, depending on your tool's async nature
+      )
+
   langchain_tool:
     adapter_import: automcp.adapters.langchain import create_langchain_tool_adapter
     import_comment: "# from your_module import your_langchain_tool"
