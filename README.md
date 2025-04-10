@@ -2,7 +2,7 @@
 
 ## 🚀 Overview
 
-automcp allows you to easily convert tool, agents and orchestrators from existing agent frameworks [MCP](https://modelcontextprotocol.io/introduction) servers, that can then be accessed by standardized interfaces via clients like Cursor and Claude Desktop.
+automcp allows you to easily convert tools, agents and orchestrators from existing agent frameworks into [MCP](https://modelcontextprotocol.io/introduction) servers, that can then be accessed by standardized interfaces via clients like Cursor and Claude Desktop.
 
 We currently support deployment of agents, tools, and orchestrators as MCP servers for the following agent frameworks:
 
