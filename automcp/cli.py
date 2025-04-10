@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Determine the location of the templates relative to this file
 _CLI_DIR = Path(__file__).parent
-_TEMPLATE_FILE = _CLI_DIR / "cli_templates/automcp.py.template"
+_TEMPLATE_FILE = _CLI_DIR / "cli_templates/run_automcp.py.template"
 _CONFIG_FILE = _CLI_DIR / "cli_templates/framework_config.yaml"
 
 
