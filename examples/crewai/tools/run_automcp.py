@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from automcp.adapters.crewai_tool_adapter import create_crewai_tool_adapter
+from automcp.adapters.crewai import create_crewai_tool_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -10,46 +10,46 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace these imports with your actual crew class
+# You'll need to replace these imports with your actual crewai_tool objects
 from main import serper_tool, exa_tool
 
-class SearchGoogleInput(BaseModel):
+# Define the input schema for your crewai_tool
+class SerperExaToolInput(BaseModel):
     search_query: str
 
-class SearchExaInput(BaseModel):
-    search_query: str
+serper_tool_name = "serper_tool"
+serper_tool_description = "A tool that uses Serper to search the web"
 
-name_search_google_tool = "search_google_tool"
-description_search_google_tool = "Search Google for a query"
-
-# Create an adapter for LangGraph
-mcp_serper_tool = create_crewai_tool_adapter(
+# Create an adapter for crewai_tool
+mcp_crewai_tool = create_crewai_tool_adapter(
     tool_instance=serper_tool,
-    name=name_search_google_tool,
-    description=description_search_google_tool,
-    input_schema=SearchGoogleInput,
+    name=serper_tool_name,
+    description=serper_tool_description,
+    input_schema=SerperExaToolInput,
 )
 
-name_search_exa_tool = "search_exa_tool"
-description_search_exa_tool = "Search Exa for a query"
 
-mcp_exa_tool = create_crewai_tool_adapter(
+mcp.add_tool(
+    mcp_crewai_tool,
+    name=serper_tool_name,
+    description=serper_tool_description
+)
+
+exa_tool_name = "exa_tool"
+exa_tool_description = "A tool that uses Exa to search the web"
+
+# Create an adapter for crewai_tool
+mcp_crewai_tool = create_crewai_tool_adapter(
     tool_instance=exa_tool,
-    name=name_search_exa_tool,
-    description=description_search_exa_tool,
-    input_schema=SearchExaInput,
+    name=exa_tool_name,
+    description=exa_tool_description,   
+    input_schema=SerperExaToolInput,
 )
 
 mcp.add_tool(
-    mcp_serper_tool,
-    name=name_search_google_tool,
-    description=description_search_google_tool,
-)
-
-mcp.add_tool(
-    mcp_exa_tool,
-    name=name_search_exa_tool,
-    description=description_search_exa_tool,
+    mcp_crewai_tool,
+    name=exa_tool_name,
+    description=exa_tool_description
 )
 
 # Server entrypoints
@@ -87,4 +87,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:
-        serve_stdio() 
+        serve_stdio()

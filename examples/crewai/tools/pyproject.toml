@@ -8,7 +8,7 @@ dependencies = [
     "pydantic>=2.11.1",
     "uv>=0.6.6",
     "exa-py==1.11.0",
-    "auto-mcp",
+    "automcp @ git+https://github.com/NapthaAI/automcp.git@dev/crewai",
     "crewai-tools>=0.33.0",
 ]
 
@@ -27,6 +27,3 @@ exclude = [ "__pycache__", "*.pyc", ".pytest_cache", ".ruff_cache",]
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-[tool.uv.sources]
-auto-mcp = { path = "../../../" }

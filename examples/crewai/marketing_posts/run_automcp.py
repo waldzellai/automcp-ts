@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from automcp.adapters.crewai_orchestrator_adapter import create_crewai_orchestrator_adapter
+from automcp.adapters.crewai import create_crewai_orchestrator_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -10,33 +10,32 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace these imports with your actual crew class
-from crew import JobPostingCrew
+# You'll need to replace these imports with your actual crewai_orchestrator objects
+from crew import MarketingPostsCrew
 
-# Define the input schema for your crew
+# Define the input schema for your crewai_orchestrator
 class InputSchema(BaseModel):
-    company_domain: str
-    hiring_needs: str
-    company_description: str
-    specific_benefits: str
+    # Replace these with your actual input parameters
+    project_description: str
+    customer_domain: str
 
-name = "job_posting_crew"
-description = "A crew to generate a job posting"
+name = "marketing_posts_crew"
+description = "A crew that posts marketing posts to a social media platform"
 
-# Uncomment and modify this code when you have your crew orchestrator instance ready
-adapter = create_crewai_orchestrator_adapter(
-    framework_obj=JobPostingCrew().crew,
+# Create an adapter for crewai_orchestrator
+mcp_crewai_orchestrator = create_crewai_orchestrator_adapter(
+    orchestrator_instance=MarketingPostsCrew().crew(),
     name=name,
     description=description,
     input_schema=InputSchema,
 )
 
-mcp.add_tool(
-    adapter,
-    name=name,
-    description=description,
-)
 
+mcp.add_tool(
+    mcp_crewai_orchestrator,
+    name=name,
+    description=description
+)
 
 # Server entrypoints
 def serve_sse():
@@ -73,4 +72,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:
-        serve_stdio() 
+        serve_stdio()

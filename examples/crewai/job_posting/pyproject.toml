@@ -3,20 +3,27 @@ name = "mcp-project"
 version = "0.1.0"
 description = "A project with MCP server integration"
 requires-python = ">=3.10"
-dependencies = [ "crewai>=0.108.0", "crewai-tools>=0.38.1", "mcp>=1.6.0", "pydantic>=2.11.1", "auto_mcp @ file:///Users/arshath/play/naptha/auto-mcp",]
+dependencies = [
+ "automcp @ git+https://github.com/NapthaAI/automcp.git@dev/crewai",
+ "crewai>=0.108.0",
+ "crewai-tools>=0.38.1",
+ "mcp>=1.6.0",
+ "pydantic>=2.11.1",
+]
 
 [build-system]
 requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
 [project.scripts]
-serve_stdio = "mcp_server:serve_stdio"
-serve_sse = "mcp_server:serve_sse"
+serve_stdio = "run_automcp:serve_stdio"
+serve_sse = "run_automcp:serve_sse"
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-include = [ "mcp_server.py",]
+include = [ "run_automcp.py",]
 exclude = [ "__pycache__", "*.pyc",]
 sources = [ ".",]
+
