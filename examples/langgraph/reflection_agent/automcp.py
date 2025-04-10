@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.langgraph_adapter import create_langgraph_adapter
+from automcp.adapters.langgraph_adapter import create_langgraph_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 

@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.crewai_tool_adapter import create_crewai_tool_adapter
+from automcp.adapters.crewai_tool_adapter import create_crewai_tool_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 

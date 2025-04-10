@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.crewai_agent_adapter import create_crewai_agent_adapter
+from automcp.adapters.crewai_agent_adapter import create_crewai_agent_adapter
 from main import data_analyst, test_task
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP

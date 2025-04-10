@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.openai_adapter import create_openai_orchestrator_adapter
+from automcp.adapters.openai_adapter import create_openai_orchestrator_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 from main import TranslatorAgent

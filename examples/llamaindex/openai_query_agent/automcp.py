@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.llamaindex_adapter import create_llamaindex_agent_adapter
+from automcp.adapters.llamaindex_adapter import create_llamaindex_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 from main import QueryAgent

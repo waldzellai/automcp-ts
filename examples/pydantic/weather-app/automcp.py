@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.pydantic_adapter import create_pydantic_agent_adapter
+from automcp.adapters.pydantic_adapter import create_pydantic_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 

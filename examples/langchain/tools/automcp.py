@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from auto_mcp.adapters.langchain_tool_adapter import create_langchain_tool_adapter
+from automcp.adapters.langchain_tool_adapter import create_langchain_tool_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
