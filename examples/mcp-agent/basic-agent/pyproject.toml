@@ -11,7 +11,7 @@ dependencies = [
     "pydantic>=2.11.1",
     "uv>=0.6.6",
     "mcp-agent",
-    "auto-mcp",
+    "automcp @ git+https://github.com/NapthaAI/automcp.git@dev/crewai",
 ]
 
 [build-system]
@@ -19,16 +19,13 @@ requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
 [project.scripts]
-serve_stdio = "mcp_server:serve_stdio"
-serve_sse = "mcp_server:serve_sse"
+serve_stdio = "run_automcp:serve_stdio"
+serve_sse = "run_automcp:serve_sse"
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-include = [ "/mcp_server.py",]
+include = [ "run_automcp.py",]
 packages = [ ".",]
 exclude = [ "__pycache__", "*.pyc", ".pytest_cache", ".ruff_cache",]
-
-[tool.uv.sources]
-auto-mcp = { path = "../../../" }

@@ -1,8 +1,10 @@
 import warnings
 from typing import Any
-from automcp.adapters.mcp_agent_adapter import create_mcp_agent_adapter
+from automcp.adapters.mcp_agent import create_mcp_agent_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
+from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
+
 
 # Create MCP server
 mcp = FastMCP("MCP Server")
@@ -10,27 +12,27 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace these imports with your actual crew class
-from main import finder_agent, app, app_initialize
-from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
+# You'll need to replace these imports with your actual mcp_agent objects
+from main import app, finder_agent, app_initialize
 
-# Define the input schema for your crew
+# Define the input schema for your mcp_agent
 class InputSchema(BaseModel):
     query: str
 
 name = "multipurpose_agent"
-description = "A multipurpose agent that can has acess to filesystem and to fetch URLs"
+description = "A multipurpose agent that can help you with reading filesystem and fetch information from the web"
 
-# Create an adapter for Langchain
+# Create an adapter for mcp_agent
 mcp_agent = create_mcp_agent_adapter(
     agent_instance=finder_agent,
-    llm=OpenAIAugmentedLLM,
-    app=app,
-    app_initialize_fn=app_initialize,
+    llm=OpenAIAugmentedLLM, 
+    app=app,  
+    app_initialize_fn=app_initialize, 
     name=name,
     description=description,
     input_schema=InputSchema,
 )
+
 
 mcp.add_tool(
     mcp_agent,
@@ -73,4 +75,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:
-        serve_stdio() 
+        serve_stdio()

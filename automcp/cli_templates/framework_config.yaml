@@ -58,7 +58,7 @@ frameworks:
       )
 
   mcp_agent:
-    adapter_import: automcp.adapters.mcp_agent_adapter import create_mcp_agent_adapter
+    adapter_import: automcp.adapters.mcp_agent import create_mcp_agent_adapter
     import_comment: "# from your_module import your_agent_class, your_llm, your_app"
     adapter_definition: |
       mcp_agent = create_mcp_agent_adapter(
