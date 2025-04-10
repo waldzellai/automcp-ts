@@ -1,8 +1,10 @@
 [project]
-name = "automcp"
+name = "auto-mcp"
 version = "0.1.0"
-description = "Converts any agent/LLM framework to MCP server"
+description = "Convert tool, agents and orchestrators from existing agent frameworks to MCP servers"
 readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Richard Blythman", email = "richard@naptha.ai" }]
 requires-python = ">=3.10"
 dependencies = [
     "mcp>=1.6.0",
@@ -10,6 +12,9 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "toml>=0.10.0"
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/NapthaAI/auto-mcp"
 
 [build-system]
 requires = ["hatchling"]
