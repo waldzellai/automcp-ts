@@ -1,5 +1,5 @@
 [project]
-name = "auto_mcp"
+name = "automcp"
 version = "0.1.0"
 description = "Converts any agent/LLM framework to MCP server"
 readme = "README.md"
