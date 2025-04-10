@@ -86,9 +86,7 @@ def init_command(args) -> None:
 
     print("\nSetup complete! Next steps:")
     print(f"1. Edit {current_dir / 'run_automcp.py'} to import and configure your {args.framework} agent/crew/graph")
-    print(f"2. Review {current_dir / 'pyproject.toml'} to ensure dependencies are correct.")
-    print("3. Run 'uv sync' or 'pip install -e .' to install dependencies including auto_mcp")
-    print("4. Run your MCP server using one of these commands:")
+    print("2. Run your MCP server using one of these commands:")
     print("   - automcp serve         # For STDIO transport (default)")
     print("   - automcp serve sse     # For SSE transport")
     print("   - uv run serve_stdio           # Using the script entry point (if using uv)")
