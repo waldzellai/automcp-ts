@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.12.4'",
@@ -36,39 +37,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/87/d6/21b30a550dafea84b1b8eee21b5e23fa16d010ae006011221f33dcd8d7f8/async-timeout-4.0.3.tar.gz", hash = "sha256:4640d96be84d82d02ed59ea2b7105a0f7b33abe8703703cd0ab0bf87c427522f", size = 8345 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/fa/e01228c2938de91d47b307831c62ab9e4001e747789d0b05baf779a6488c/async_timeout-4.0.3-py3-none-any.whl", hash = "sha256:7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028", size = 5721 },
-]
-
-[[package]]
-name = "automcp"
-version = "0.1.0"
-source = { directory = "../../../" }
-dependencies = [
-    { name = "mcp" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-    { name = "toml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "crewai", marker = "extra == 'all'", specifier = ">=0.108.0" },
-    { name = "crewai", marker = "extra == 'crewai'", specifier = ">=0.108.0" },
-    { name = "crewai-tools", marker = "extra == 'all'", specifier = ">=0.38.1" },
-    { name = "crewai-tools", marker = "extra == 'crewai'", specifier = ">=0.38.1" },
-    { name = "langchain", marker = "extra == 'all'", specifier = "==0.3.20" },
-    { name = "langchain", marker = "extra == 'langgraph'", specifier = "==0.3.20" },
-    { name = "langchain-openai", marker = "extra == 'all'", specifier = "==0.2.14" },
-    { name = "langchain-openai", marker = "extra == 'langgraph'", specifier = "==0.2.14" },
-    { name = "langgraph", marker = "extra == 'all'", specifier = "==0.3.25" },
-    { name = "langgraph", marker = "extra == 'langgraph'", specifier = "==0.3.25" },
-    { name = "llama-index", marker = "extra == 'all'", specifier = ">=0.12.28" },
-    { name = "llama-index", marker = "extra == 'llamaindex'", specifier = ">=0.12.28" },
-    { name = "mcp", specifier = ">=1.6.0" },
-    { name = "openai-agents", marker = "extra == 'all'", specifier = ">=0.0.9" },
-    { name = "openai-agents", marker = "extra == 'openai'", specifier = ">=0.0.9" },
-    { name = "pydantic", specifier = ">=2.11.1" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "toml", specifier = ">=0.10.0" },
 ]
 
 [[package]]
@@ -583,26 +551,37 @@ name = "mcp-project"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "automcp" },
     { name = "langchain" },
     { name = "langchain-core" },
     { name = "langchain-openai" },
     { name = "langgraph" },
     { name = "mcp" },
+    { name = "naptha-automcp" },
     { name = "pydantic" },
     { name = "uv" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "automcp", directory = "../../../" },
     { name = "langchain", specifier = "==0.3.20" },
     { name = "langchain-core", specifier = ">=0.3.51" },
     { name = "langchain-openai", specifier = "==0.2.14" },
     { name = "langgraph", specifier = "==0.3.25" },
     { name = "mcp", specifier = ">=1.6.0" },
+    { name = "naptha-automcp", git = "https://github.com/napthaai/automcp.git?rev=chore%2Ffewer-adapters" },
     { name = "pydantic", specifier = ">=2.11.1" },
     { name = "uv", specifier = ">=0.6.6" },
+]
+
+[[package]]
+name = "naptha-automcp"
+version = "0.1.0"
+source = { git = "https://github.com/napthaai/automcp.git?rev=chore%2Ffewer-adapters#ccbea83e1dc72eb1b3481883ca7bd0eb6736b9d3" }
+dependencies = [
+    { name = "mcp" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "toml" },
 ]
 
 [[package]]

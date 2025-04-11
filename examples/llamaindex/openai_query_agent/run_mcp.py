@@ -1,29 +1,32 @@
 import warnings
 from typing import Any
-from automcp.adapters.llamaindex import create_llamaindex_agent_adapter
+from automcp.adapters.llamaindex import create_llamaindex_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
-from main import QueryAgent
 
 # Create MCP server
-mcp = FastMCP("LlamaIndex City Information Agent MCP Server")
+mcp = FastMCP("MCP Server")
 
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
+# You'll need to replace these imports with your actual llamaindex objects
+from main import QueryAgent
 
-# Define the input schema for your llamaindex_agent
+# Define the input schema for your llamaindex
 class InputSchema(BaseModel):
+    # Replace these with your actual input parameters
     query: str
+    # Add more parameters as needed
 
-name = "City Information Agent"
-description = "An agent that can answer questions about cities using both SQL and vector search capabilities"
+name = "OpenAI Query Agent"
+description = "A query agent that uses OpenAI to query a database"
 
-# Create an adapter for llamaindex_agent
-mcp_llamaindex_agent = create_llamaindex_agent_adapter(
-    agent_instance=QueryAgent().get_agent(),
-    name="City Information Agent",
-    description="An agent that can answer questions about cities using both SQL and vector search capabilities",
+# Create an adapter for llamaindex
+mcp_llamaindex_agent = create_llamaindex_adapter(
+    agent_instance=QueryAgent().get_agent(),  # Replace with your actual LlamaIndex agent instance
+    name=name,  # Replace with your agent name
+    description=description,
     input_schema=InputSchema,
 )
 

@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from automcp.adapters.pydantic import create_pydantic_agent_adapter
+from automcp.adapters.pydantic import create_pydantic_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -10,23 +10,26 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace these imports with your actual pydantic_agent objects
+# You'll need to replace these imports with your actual pydantic objects
 from main import weather_agent
 
-# Define the input schema for your pydantic_agent
+# Define the input schema for your pydantic
 class InputSchema(BaseModel):
+    # Replace these with your actual input parameters
     query: str
+    # Add more parameters as needed
 
-name = "weather_agent"
-description = "A weather agent that can help you with the weather"
+name = "Weather Agent"
+description = "A weather agent that can help you get the weather of a city"
 
-# Create an adapter for pydantic_agent
-mcp_pydantic_agent = create_pydantic_agent_adapter(
-    agent_instance=weather_agent,
+# Create an adapter for pydantic
+mcp_pydantic_agent = create_pydantic_adapter(
+    agent_instance=weather_agent,  # Replace with your actual Pydantic agent instance
     name=name,
     description=description,
     input_schema=InputSchema,
 )
+
 
 mcp.add_tool(
     mcp_pydantic_agent,

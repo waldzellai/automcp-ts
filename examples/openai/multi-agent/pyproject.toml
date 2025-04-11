@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "An openai agent project with MCP server integration"
 requires-python = ">=3.10"
 dependencies = [
-    "automcp",
+    "naptha-automcp @ git+https://github.com/napthaai/automcp.git@chore/fewer-adapters",
     "openai-agents>=0.0.9",
     "pyyaml>=6.0.2",
 ]

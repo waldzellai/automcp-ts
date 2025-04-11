@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.12' and python_full_version < '4.0'",
@@ -150,39 +151,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/5a/b0/1367933a8532ee6ff8d63537de4f1177af4bff9f3e829baf7331f595bb24/attrs-25.3.0.tar.gz", hash = "sha256:75d7cefc7fb576747b2c81b4442d4d4a1ce0900973527c011d1030fd3bf4af1b", size = 812032 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/77/06/bb80f5f86020c4551da315d78b3ab75e8228f89f0162f2c3a819e407941a/attrs-25.3.0-py3-none-any.whl", hash = "sha256:427318ce031701fea540783410126f03899a97ffc6f61596ad581ac2e40e3bc3", size = 63815 },
-]
-
-[[package]]
-name = "automcp"
-version = "0.1.0"
-source = { directory = "../../../" }
-dependencies = [
-    { name = "mcp" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-    { name = "toml" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "crewai", marker = "extra == 'all'", specifier = ">=0.108.0" },
-    { name = "crewai", marker = "extra == 'crewai'", specifier = ">=0.108.0" },
-    { name = "crewai-tools", marker = "extra == 'all'", specifier = ">=0.38.1" },
-    { name = "crewai-tools", marker = "extra == 'crewai'", specifier = ">=0.38.1" },
-    { name = "langchain", marker = "extra == 'all'", specifier = "==0.3.20" },
-    { name = "langchain", marker = "extra == 'langgraph'", specifier = "==0.3.20" },
-    { name = "langchain-openai", marker = "extra == 'all'", specifier = "==0.2.14" },
-    { name = "langchain-openai", marker = "extra == 'langgraph'", specifier = "==0.2.14" },
-    { name = "langgraph", marker = "extra == 'all'", specifier = "==0.3.25" },
-    { name = "langgraph", marker = "extra == 'langgraph'", specifier = "==0.3.25" },
-    { name = "llama-index", marker = "extra == 'all'", specifier = ">=0.12.28" },
-    { name = "llama-index", marker = "extra == 'llamaindex'", specifier = ">=0.12.28" },
-    { name = "mcp", specifier = ">=1.6.0" },
-    { name = "openai-agents", marker = "extra == 'all'", specifier = ">=0.0.9" },
-    { name = "openai-agents", marker = "extra == 'openai'", specifier = ">=0.0.9" },
-    { name = "pydantic", specifier = ">=2.11.1" },
-    { name = "python-dotenv", specifier = ">=1.0.0" },
-    { name = "toml", specifier = ">=0.10.0" },
 ]
 
 [[package]]
@@ -998,26 +966,26 @@ name = "mcp-project"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "automcp" },
     { name = "llama-index" },
     { name = "llama-index-core" },
     { name = "llama-index-llms-openai" },
     { name = "llama-index-readers-wikipedia" },
     { name = "llama-index-vector-stores-pinecone" },
     { name = "mcp" },
+    { name = "naptha-automcp" },
     { name = "pydantic" },
     { name = "wikipedia" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "automcp", directory = "../../../" },
     { name = "llama-index", specifier = ">=0.12.28" },
     { name = "llama-index-core", specifier = ">=0.12.28" },
     { name = "llama-index-llms-openai" },
     { name = "llama-index-readers-wikipedia", specifier = ">=0.3.0" },
     { name = "llama-index-vector-stores-pinecone" },
     { name = "mcp", specifier = ">=1.6.0" },
+    { name = "naptha-automcp", git = "https://github.com/napthaai/automcp.git?rev=chore%2Ffewer-adapters" },
     { name = "pydantic", specifier = ">=2.11.1" },
     { name = "wikipedia", specifier = ">=1.4.0" },
 ]
@@ -1126,6 +1094,17 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/98/a4/1ab47638b92648243faf97a5aeb6ea83059cc3624972ab6b8d2316078d3f/mypy_extensions-1.0.0.tar.gz", hash = "sha256:75dbf8955dc00442a438fc4d0666508a9a97b6bd41aa2f0ffe9d2f2725af0782", size = 4433 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/e2/5d3f6ada4297caebe1a2add3b126fe800c96f56dbe5d1988a2cbe0b267aa/mypy_extensions-1.0.0-py3-none-any.whl", hash = "sha256:4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d", size = 4695 },
+]
+
+[[package]]
+name = "naptha-automcp"
+version = "0.1.0"
+source = { git = "https://github.com/napthaai/automcp.git?rev=chore%2Ffewer-adapters#5d69c15241b43afb191145a8d3ebac0e5f53bfb7" }
+dependencies = [
+    { name = "mcp" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "toml" },
 ]
 
 [[package]]

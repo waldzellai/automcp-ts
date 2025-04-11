@@ -1,35 +1,39 @@
 import warnings
 from typing import Any
-from automcp.adapters.langgraph import create_langgraph_graph_adapter
+from automcp.adapters.langgraph import create_langgraph_adapter
 from pydantic import BaseModel, Field
 from mcp.server.fastmcp import FastMCP
-from main import SelfDiscoverAgent
 
 # Create MCP server
-mcp = FastMCP("Self Discover Agent MCP Server")
+mcp = FastMCP("MCP Server")
 
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# Define the input schema for your langgraph_agent
+# You'll need to replace these imports with your actual langgraph objects
+from main import SelfDiscoverAgent
+
+# Define the input schema for your langgraph
 class InputSchema(BaseModel):
     task_description: str
     reasoning_modules: str = Field(default="1. How could I devise an experiment to help solve that problem?\n2. How can I simplify the problem so that it is easier to solve?")
 
 
-# Create an adapter for langgraph_agent
-mcp_langgraph_agent = create_langgraph_graph_adapter(
-    graph_instance=SelfDiscoverAgent().get_agent(),
+name = "Self Discover Agent"
+description = "A self-discover agent that can help you discover new things"
+
+# Create an adapter for langgraph
+mcp_langgraph_agent = create_langgraph_adapter(
+    agent_instance=SelfDiscoverAgent().get_agent(),
     name="Self Discover Agent",
     description="A self-discover agent that can help you discover new things",
     input_schema=InputSchema,
 )
 
-
 mcp.add_tool(
     mcp_langgraph_agent,
-    name="Self Discover Agent",
-    description="A self-discover agent that can help you discover new things",
+    name=name,
+    description=description
 )
 
 # Server entrypoints
