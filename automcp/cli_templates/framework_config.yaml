@@ -1,5 +1,5 @@
 frameworks:
-  crewai_agent:
+  crewai:
     adapter_import: automcp.adapters.crewai import create_crewai_adapter
     import_comment: "# from your_module import YourCrewAgent"
     adapter_definition: |
@@ -24,7 +24,7 @@ frameworks:
           input_schema=InputSchema,
       )
 
-  langgraph_agent:
+  langgraph:
     adapter_import: automcp.adapters.langgraph import create_langgraph_adapter
     import_comment: "# from your_module import YourLangGraphAgent"
     adapter_definition: |
@@ -35,7 +35,7 @@ frameworks:
           input_schema=InputSchema,
       )
 
-  pydantic_agent:
+  pydantic:
     adapter_import: automcp.adapters.pydantic import create_pydantic_adapter
     import_comment: "# from your_module import YourPydanticAgent"
     adapter_definition: |
@@ -46,7 +46,7 @@ frameworks:
           input_schema=InputSchema,
       )
   
-  llamaindex_agent:
+  llamaindex:
     adapter_import: automcp.adapters.llamaindex import create_llamaindex_adapter
     import_comment: "# from your_module import YourLlamaIndexAgent"
     adapter_definition: |
@@ -57,7 +57,7 @@ frameworks:
           input_schema=InputSchema,
       )
 
-  openai_agent:
+  openai:
     adapter_import: automcp.adapters.openai import create_openai_adapter
     import_comment: "# from your_module import YourOpenAIAgent"
     adapter_definition: |
