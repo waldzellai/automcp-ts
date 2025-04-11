@@ -1,30 +1,33 @@
 import warnings
 from typing import Any
-from automcp.adapters.openai import create_openai_agent_adapter
+from automcp.adapters.openai import create_openai_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
-from main import TranslatorAgent
 
 # Create MCP server
-mcp = FastMCP("OpenAI Translator Agent MCP Server")
+mcp = FastMCP("MCP Server")
 
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# Define the input schema for your openai_agent
+# You'll need to replace these imports with your actual openai objects
+from main import TranslatorAgent
+
+# Define the input schema for your openai
 class InputSchema(BaseModel):
     message: str
 
 name = "Translator Agent"
-description = "A translator agent that translates text from English to Spanish"
+description = "A translator agent that translates text from English to French"
 
-# Create an adapter for openai_agent
-mcp_openai_agent = create_openai_agent_adapter(
-    agent_instance=TranslatorAgent().get_orchestrator_agent(),
+# Create an adapter for openai
+mcp_openai_agent = create_openai_adapter(
+    agent_instance=TranslatorAgent().get_orchestrator_agent(),  # Replace with your actual OpenAI agent instance
     name=name,
     description=description,
     input_schema=InputSchema,
 )
+    
 
 mcp.add_tool(
     mcp_openai_agent,

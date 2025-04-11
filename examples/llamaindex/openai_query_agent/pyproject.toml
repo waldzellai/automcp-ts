@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A project with MCP server integration"
 requires-python = ">=3.10"
 dependencies = [
- "automcp",
+ "naptha-automcp @ git+https://github.com/napthaai/automcp.git@chore/fewer-adapters",
  "llama-index>=0.12.28",
  "llama-index-core>=0.12.28",
  "llama-index-llms-openai",

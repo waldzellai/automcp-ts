@@ -6,7 +6,7 @@ from typing import Any, Callable, Type, Optional
 from pydantic import BaseModel
 from agents import Runner
 
-def create_openai_agent_adapter(
+def create_openai_adapter(
     agent_instance: Any,
     name: str,
     description: str,

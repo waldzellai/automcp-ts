@@ -9,7 +9,7 @@ dependencies = [
     "pydantic-ai==0.0.43", 
     "pydantic>=2.11.1", 
     "uv>=0.6.6",
-    "automcp @ git+https://github.com/NapthaAI/automcp.git@dev/crewai",
+    "naptha-automcp @ git+https://github.com/napthaai/automcp.git@chore/fewer-adapters",
 ]
 
 [build-system]

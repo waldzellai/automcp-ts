@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A project with MCP server integration"
 requires-python = ">=3.10"
 dependencies = [ 
-    "automcp @ git+https://github.com/NapthaAI/automcp.git@dev/crewai",
+    "naptha-automcp @ git+https://github.com/napthaai/automcp.git@chore/fewer-adapters",
     "langchain-openai==0.2.14", 
     "langchain==0.3.20", 
     "langgraph==0.3.25", 

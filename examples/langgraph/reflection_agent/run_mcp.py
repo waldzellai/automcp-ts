@@ -1,6 +1,6 @@
 import warnings
 from typing import Any
-from automcp.adapters.langgraph import create_langgraph_graph_adapter
+from automcp.adapters.langgraph import create_langgraph_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -10,21 +10,21 @@ mcp = FastMCP("MCP Server")
 # Suppress warnings that might interfere with STDIO transport
 warnings.filterwarnings("ignore")
 
-# You'll need to replace these imports with your actual langgraph_agent objects
+# You'll need to replace these imports with your actual langgraph objects
 from main import ReflectionAgent
 
-# Define the input schema for your langgraph_agent
+# Define the input schema for your langgraph
 class InputSchema(BaseModel):
     # Replace these with your actual input parameters
     query: str
     # Add more parameters as needed
 
-name = "reflection_agent"
-description = "A reflection agent that can help you with your writing"
+name = "Reflection Agent"
+description = "A reflection agent that reflects on the user's query"
 
-# Create an adapter for langgraph_agent
-mcp_langgraph_agent = create_langgraph_graph_adapter(
-    graph_instance=ReflectionAgent().graph,
+# Create an adapter for langgraph
+mcp_langgraph_agent = create_langgraph_adapter(
+    agent_instance=ReflectionAgent().graph,  # Replace with your actual LangGraph agent instance
     name=name,
     description=description,
     input_schema=InputSchema,

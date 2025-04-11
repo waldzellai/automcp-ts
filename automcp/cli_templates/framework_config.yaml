@@ -1,60 +1,13 @@
 frameworks:
-  crewai_agent:
-    adapter_import: automcp.adapters.crewai import create_crewai_agent_adapter
-    import_comment: "# from your_module import YourAgentInstance, YourTaskInstance"
+  crewai:
+    adapter_import: automcp.adapters.crewai import create_crewai_adapter
+    import_comment: "# from your_module import YourCrewAgent"
     adapter_definition: |
-      mcp_crewai_agent = create_crewai_agent_adapter(
-          agent_instance=YourAgentInstance,
-          task_instance=YourTaskInstance,
+      mcp_crewai = create_crewai_adapter(
+          agent_instance=YourCrewAgent,  # Replace with your actual CrewAI agent instance
           name=name,
           description=description,
           input_schema=InputSchema,
-      )
-
-  crewai_orchestrator:
-    adapter_import: automcp.adapters.crewai import create_crewai_orchestrator_adapter
-    import_comment: "# from your_module import YourCrewClass"
-    adapter_definition: |
-      mcp_crewai_orchestrator = create_crewai_orchestrator_adapter(
-          orchestrator_instance=YourOrchestratorInstance,
-          name=name,
-          description=description,
-          input_schema=InputSchema,
-      )
-
-  crewai_tool:
-    adapter_import: automcp.adapters.crewai import create_crewai_tool_adapter
-    import_comment: "# from your_module import your_tool_instance"
-    adapter_definition: |
-      mcp_crewai_tool = create_crewai_tool_adapter(
-          tool_instance=YourToolInstance,
-          name=name,
-          description=description,
-          input_schema=InputSchema,
-      )
-
-  llamaindex_tool:
-    adapter_import: automcp.adapters.llamaindex import create_llamaindex_tool_adapter
-    import_comment: "# from your_module import your_tool_instance"
-    adapter_definition: |
-      mcp_llamaindex_tool = create_llamaindex_tool_adapter(
-          tool_instance=YourToolInstance,
-          name=name,
-          description=description,
-          input_schema=InputSchema,
-          is_async_tool=True, # or False, depending on your tool's async nature
-      )
-
-  langchain_tool:
-    adapter_import: automcp.adapters.langchain import create_langchain_tool_adapter
-    import_comment: "# from your_module import your_langchain_tool"
-    adapter_definition: |
-      mcp_langchain_tool = create_langchain_tool_adapter(
-          tool_instance=YourToolClass,
-          name=name,
-          description=description,
-          input_schema=InputSchema,
-          run_func="run", # Optional, this is the method to call on the tool instance
       )
 
   mcp_agent:
@@ -71,45 +24,45 @@ frameworks:
           input_schema=InputSchema,
       )
 
-  langgraph_agent:
-    adapter_import: automcp.adapters.langgraph import create_langgraph_graph_adapter
-    import_comment: "# from your_module import your_langgraph_agent"
+  langgraph:
+    adapter_import: automcp.adapters.langgraph import create_langgraph_adapter
+    import_comment: "# from your_module import YourLangGraphAgent"
     adapter_definition: |
-      mcp_langgraph_agent = create_langgraph_graph_adapter(
-          graph_instance=YourLangGraphAgentInstance,
+      mcp_langgraph_agent = create_langgraph_adapter(
+          agent_instance=YourLangGraphAgent,  # Replace with your actual LangGraph agent instance
           name=name,
           description=description,
           input_schema=InputSchema,
       )
 
-  pydantic_agent:
-    adapter_import: automcp.adapters.pydantic import create_pydantic_agent_adapter
-    import_comment: "# from your_module import your_pydantic_agent"
+  pydantic:
+    adapter_import: automcp.adapters.pydantic import create_pydantic_adapter
+    import_comment: "# from your_module import YourPydanticAgent"
     adapter_definition: |
-      mcp_pydantic_agent = create_pydantic_agent_adapter(
-          agent_instance=instance_of_your_agent_class,
+      mcp_pydantic_agent = create_pydantic_adapter(
+          agent_instance=YourPydanticAgent,  # Replace with your actual Pydantic agent instance
           name=name,
           description=description,
           input_schema=InputSchema,
       )
   
-  llamaindex_agent:
-    adapter_import: automcp.adapters.llamaindex import create_llamaindex_agent_adapter
-    import_comment: "# from your_module import your_llamaindex_agent"
+  llamaindex:
+    adapter_import: automcp.adapters.llamaindex import create_llamaindex_adapter
+    import_comment: "# from your_module import YourLlamaIndexAgent"
     adapter_definition: |
-      mcp_llamaindex_agent = create_llamaindex_agent_adapter(
-          agent_instance=Instance of the agent to run,  # Replace with your actual LlamaIndex agent instance
+      mcp_llamaindex_agent = create_llamaindex_adapter(
+          agent_instance=YourLlamaIndexAgent,  # Replace with your actual LlamaIndex agent instance
           name=name,  # Replace with your agent name
           description=description,
           input_schema=InputSchema,
       )
 
-  openai_agent:
-    adapter_import: automcp.adapters.openai import create_openai_agent_adapter
+  openai:
+    adapter_import: automcp.adapters.openai import create_openai_adapter
     import_comment: "# from your_module import YourOpenAIAgent"
     adapter_definition: |
-      mcp_openai_agent = create_openai_agent_adapter(
-          agent_instance=instance_of_your_agent_class,
+      mcp_openai_agent = create_openai_adapter(
+          agent_instance=YourOpenAIAgent,  # Replace with your actual OpenAI agent instance
           name=name,
           description=description,
           input_schema=InputSchema,
