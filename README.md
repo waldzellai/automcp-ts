@@ -42,10 +42,10 @@ Navigate to your project directory with your agent implementation:
 cd your-project-directory
 ```
 
-Generate the MCP server files via CLI with one of the following flags (crewai_orchestrator, crewai_agent, crewai_tool, langgraph_agent, langchain_tool, llamaindex_agent, openai_agent, pydantic_agent, mcp_agent):
+Generate the MCP server files via CLI with one of the following flags (crewai, langgraph, llamaindex, openai, pydantic, mcp_agent):
 
 ```bash
-automcp init -f crewai_orchestrator
+automcp init -f crewai
 ```
 
 Edit the generated `run_mcp.py` file to configure your agent:
@@ -64,7 +64,7 @@ name = "<YOUR_AGENT_NAME>"
 description = "<YOUR_AGENT_DESCRIPTION>"
 
 # For CrewAI projects
-mcp_crewai_orchestrator = create_crewai_orchestrator_adapter(
+mcp_crewai = create_crewai_adapter(
     orchestrator_instance=YourCrewClass().crew(),
     name=name,
     description=description,
@@ -116,7 +116,7 @@ pip install -e .
 cd examples/crewai/marketing_agents
 
 # Generate the MCP server files (use the appropriate framework)
-automcp init -f crewai_orchestrator
+automcp init -f crewai
 
 # Edit the generated run_mcp.py file to import and configure the example agent
 # (See the specific example's README for details)
@@ -140,7 +140,7 @@ Here's what a typical configured `run_mcp.py` looks like for a CrewAI example:
 ```python
 import warnings
 from typing import Any
-from automcp.adapters.crewai import create_crewai_orchestrator_adapter
+from automcp.adapters.crewai import create_crewai_adapter
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
 
@@ -157,15 +157,15 @@ class InputSchema(BaseModel):
 name = "marketing_posts_crew"
 description = "A crew that posts marketing posts to a social media platform"
 
-# Create an adapter for crewai_orchestrator
-mcp_crewai_orchestrator = create_crewai_orchestrator_adapter(
+# Create an adapter for crewai
+mcp_crewai = create_crewai_adapter(
     orchestrator_instance=MarketingPostsCrew().crew(),
     name=name,
     description=description,
     input_schema=InputSchema,
 )
 mcp.add_tool(
-    mcp_crewai_orchestrator,
+    mcp_crewai,
     name=name,
     description=description
 )
@@ -337,7 +337,7 @@ import io
 from typing import Any, Callable, Type
 from pydantic import BaseModel
 
-def create_framework_agent_adapter(
+def create_framework_adapter(
     agent_instance: Any,
     name: str,
     description: str,
@@ -367,7 +367,7 @@ def create_framework_agent_adapter(
     # Create a namespace for the function
     namespace = {
         "input_schema": input_schema,
-        "orchestrator_instance": agent_instance,
+        "agent_instance": agent_instance,
         "json": json,
         "contextlib": contextlib,
         "io": io,
@@ -377,13 +377,13 @@ def create_framework_agent_adapter(
     exec(body_str, namespace)
 
     # Get the created function
-    run_orchestrator = namespace["run_orchestrator"]
+    run_agent = namespace["run_agent"]
 
     # Add proper function metadata
-    run_orchestrator.__name__ = name
-    run_orchestrator.__doc__ = description
+    run_agent.__name__ = name
+    run_agent.__doc__ = description
 
-    return run_orchestrator
+    return run_agent
 ```
 
 2. Create an example in examples/your_framework/
