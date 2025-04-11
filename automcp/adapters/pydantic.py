@@ -5,7 +5,7 @@ import contextlib
 import io
 
 
-def create_pydantic_agent_adapter(
+def create_pydantic_adapter(
     agent_instance: Any,
     name: str,
     description: str,
