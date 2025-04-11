@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A project with MCP server integration"
 requires-python = ">=3.10"
 dependencies = [
-    "naptha-automcp @ git+https://github.com/napthaai/automcp.git@chore/fewer-adapters",
+    "naptha-automcp,
     "crewai>=0.108.0",
     "crewai-tools>=0.38.1",
     "mcp>=1.6.0",

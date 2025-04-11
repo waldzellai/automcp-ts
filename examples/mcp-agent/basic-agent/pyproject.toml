@@ -11,7 +11,7 @@ dependencies = [
     "pydantic>=2.11.1",
     "uv>=0.6.6",
     "mcp-agent",
-    "naptha-automcp @ git+https://github.com/napthaai/automcp.git@chore/fewer-adapters",
+    "naptha-automcp,
 ]
 
 [build-system]
