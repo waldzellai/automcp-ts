@@ -2,7 +2,7 @@
 name = "mcp-project"
 version = "0.1.0"
 description = "A project with MCP server integration"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "naptha-automcp",
     "crewai>=0.108.0",

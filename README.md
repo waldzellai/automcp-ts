@@ -20,6 +20,9 @@ Install from PyPI:
 ```bash
 # Basic installation
 pip install naptha-automcp
+
+# UV
+uv add naptha-automcp
 ```
 
 Or install from source:

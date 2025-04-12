@@ -3,6 +3,12 @@ from typing import Any
 from {{adapter_import}}
 from pydantic import BaseModel
 from mcp.server.fastmcp import FastMCP
+import os
+import sys 
+
+# add current path to python path for sub-module resolution, don't remove this
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 
 # Create MCP server
 mcp = FastMCP("MCP Server")
