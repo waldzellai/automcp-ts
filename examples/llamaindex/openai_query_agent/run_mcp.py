@@ -13,13 +13,15 @@ warnings.filterwarnings("ignore")
 # You'll need to replace these imports with your actual llamaindex objects
 from main import QueryAgent
 
+
 # Define the input schema for your llamaindex
 class InputSchema(BaseModel):
     # Replace these with your actual input parameters
     query: str
     # Add more parameters as needed
 
-name = "OpenAI Query Agent"
+
+name = "OpenAI_Query_Agent"
 description = "A query agent that uses OpenAI to query a database"
 
 # Create an adapter for llamaindex
@@ -30,15 +32,13 @@ mcp_llamaindex_agent = create_llamaindex_adapter(
     input_schema=InputSchema,
 )
 
-mcp.add_tool(
-    mcp_llamaindex_agent,
-    name=name,
-    description=description
-)
+mcp.add_tool(mcp_llamaindex_agent, name=name, description=description)
+
 
 # Server entrypoints
 def serve_sse():
     mcp.run(transport="sse")
+
 
 def serve_stdio():
     # Redirect stderr to suppress warnings that bypass the filters
@@ -48,6 +48,7 @@ def serve_stdio():
     class NullWriter:
         def write(self, *args, **kwargs):
             pass
+
         def flush(self, *args, **kwargs):
             pass
 
@@ -66,8 +67,10 @@ def serve_stdio():
         # Restore stderr for normal operation
         sys.stderr = original_stderr
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:

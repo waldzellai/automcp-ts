@@ -13,13 +13,15 @@ warnings.filterwarnings("ignore")
 # You'll need to replace these imports with your actual langgraph objects
 from main import ReflectionAgent
 
+
 # Define the input schema for your langgraph
 class InputSchema(BaseModel):
     # Replace these with your actual input parameters
     query: str
     # Add more parameters as needed
 
-name = "Reflection Agent"
+
+name = "Reflection_Agent"
 description = "A reflection agent that reflects on the user's query"
 
 # Create an adapter for langgraph
@@ -31,15 +33,13 @@ mcp_langgraph_agent = create_langgraph_adapter(
 )
 
 
-mcp.add_tool(
-    mcp_langgraph_agent,
-    name=name,
-    description=description
-)
+mcp.add_tool(mcp_langgraph_agent, name=name, description=description)
+
 
 # Server entrypoints
 def serve_sse():
     mcp.run(transport="sse")
+
 
 def serve_stdio():
     # Redirect stderr to suppress warnings that bypass the filters
@@ -49,6 +49,7 @@ def serve_stdio():
     class NullWriter:
         def write(self, *args, **kwargs):
             pass
+
         def flush(self, *args, **kwargs):
             pass
 
@@ -67,8 +68,10 @@ def serve_stdio():
         # Restore stderr for normal operation
         sys.stderr = original_stderr
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:

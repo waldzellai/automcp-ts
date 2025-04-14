@@ -13,12 +13,14 @@ warnings.filterwarnings("ignore")
 # You'll need to replace these imports with your actual openai objects
 from main import TranslatorAgent
 
+
 # Define the input schema for your openai
 class InputSchema(BaseModel):
     message: str
 
-name = "Translator Agent"
-description = "A translator agent that translates text from English to French"
+
+name = "Translator_Agent"
+description = "A translator agent that translates text from English to French, Italian, and Spanish"
 
 # Create an adapter for openai
 mcp_openai_agent = create_openai_adapter(
@@ -27,17 +29,15 @@ mcp_openai_agent = create_openai_adapter(
     description=description,
     input_schema=InputSchema,
 )
-    
 
-mcp.add_tool(
-    mcp_openai_agent,
-    name=name,
-    description=description
-)
+
+mcp.add_tool(mcp_openai_agent, name=name, description=description)
+
 
 # Server entrypoints
 def serve_sse():
     mcp.run(transport="sse")
+
 
 def serve_stdio():
     # Redirect stderr to suppress warnings that bypass the filters
@@ -47,6 +47,7 @@ def serve_stdio():
     class NullWriter:
         def write(self, *args, **kwargs):
             pass
+
         def flush(self, *args, **kwargs):
             pass
 
@@ -65,8 +66,10 @@ def serve_stdio():
         # Restore stderr for normal operation
         sys.stderr = original_stderr
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:

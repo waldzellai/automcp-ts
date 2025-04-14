@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore")
 # You'll need to replace these imports with your actual crewai objects
 from crew import MarketingPostsCrew
 
+
 # Define the input schema for your crewai
 class InputSchema(BaseModel):
     # Replace these with your actual input parameters
@@ -20,7 +21,8 @@ class InputSchema(BaseModel):
     customer_domain: str
     # Add more parameters as needed
 
-name = "Marketing Posts Crew"
+
+name = "Marketing_Posts_Crew"
 description = "A crew that posts marketing posts to a social media platform"
 
 # Create an adapter for crewai
@@ -32,15 +34,13 @@ mcp_crewai = create_crewai_adapter(
 )
 
 
-mcp.add_tool(
-    mcp_crewai,
-    name=name,
-    description=description
-)
+mcp.add_tool(mcp_crewai, name=name, description=description)
+
 
 # Server entrypoints
 def serve_sse():
     mcp.run(transport="sse")
+
 
 def serve_stdio():
     # Redirect stderr to suppress warnings that bypass the filters
@@ -50,6 +50,7 @@ def serve_stdio():
     class NullWriter:
         def write(self, *args, **kwargs):
             pass
+
         def flush(self, *args, **kwargs):
             pass
 
@@ -68,8 +69,10 @@ def serve_stdio():
         # Restore stderr for normal operation
         sys.stderr = original_stderr
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) > 1 and sys.argv[1] == "sse":
         serve_sse()
     else:
