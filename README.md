@@ -1,6 +1,6 @@
 # AutoMCP-TS
 
-A TypeScript implementation of AutoMCP, a tool for converting various AI agent frameworks into Model Context Protocol (MCP) servers. This project was converted from Python using MCP conversion tools for better TypeScript/JavaScript ecosystem integration.
+A powerful TypeScript tool for converting various AI agent frameworks into Model Context Protocol (MCP) servers. AutoMCP-TS enables seamless integration with MCP-compatible applications like Claude Desktop, bringing your AI agents into the MCP ecosystem with full TypeScript support.
 
 ## Overview
 
@@ -14,6 +14,7 @@ AutoMCP-TS automatically converts agents and tools from popular AI frameworks in
 - **Express Integration**: Built-in Express.js adapter for web applications
 - **CLI Tool**: Easy-to-use command-line interface
 - **Template System**: Configurable templates for different frameworks
+- **Zero Dependencies on Python**: Pure TypeScript/JavaScript implementation
 
 ## Supported Frameworks
 
@@ -36,7 +37,7 @@ npm install -g automcp-ts
 
 ### From Source
 ```bash
-git clone https://github.com/yourusername/automcp-ts
+git clone https://github.com/waldzellai/automcp-ts
 cd automcp-ts
 npm install
 npm run build
@@ -294,12 +295,13 @@ const result = await typedAdapter({ query: 'Hello', context: 'World' });
 
 ## Migration from Python AutoMCP
 
-If you're migrating from Python AutoMCP:
+If you're migrating from Python AutoMCP, the TypeScript version provides equivalent functionality with these improvements:
 
-1. **Imports**: Change Python imports to TypeScript imports
-2. **Schemas**: Replace Pydantic models with Zod schemas or custom classes
-3. **Async/Await**: All adapters are now async by default
-4. **Type Safety**: Add TypeScript types for better development experience
+1. **Better Type Safety**: Full TypeScript type definitions
+2. **Modern Async**: Promise-based async/await patterns  
+3. **ES Modules**: Modern module system
+4. **Enhanced Error Handling**: Better error handling and logging
+5. **Console Management**: Automatic console output capture
 
 ### Python to TypeScript Conversion Examples
 
@@ -357,14 +359,14 @@ npm run lint
 
 ## Architecture
 
-The TypeScript version maintains the same architecture as the Python original:
+AutoMCP-TS is built with a clean, modular architecture:
 
 - **Adapters**: Framework-specific conversion logic
 - **CLI**: Command-line interface for generation
 - **Templates**: Configurable server templates
 - **Utilities**: Shared helper functions
 
-Key improvements in the TypeScript version:
+Key features of the TypeScript implementation:
 - **Type Safety**: Full TypeScript type definitions
 - **Modern Async**: Promise-based async/await patterns
 - **ES Modules**: Modern module system
@@ -377,12 +379,12 @@ MIT License - see LICENSE file for details.
 
 ## Related Projects
 
-- [Original AutoMCP (Python)](https://github.com/yourusername/automcp)
 - [Model Context Protocol](https://github.com/modelcontextprotocol/specification)
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [AutoMCP Original](https://github.com/yourusername/automcp) - Python version (archived)
 
 ## Support
 
-- GitHub Issues: [Report bugs or request features](https://github.com/yourusername/automcp-ts/issues)
-- Documentation: [Full documentation](https://yourusername.github.io/automcp-ts)
-- Examples: [Example implementations](https://github.com/yourusername/automcp-ts/tree/main/examples)
+- GitHub Issues: [Report bugs or request features](https://github.com/waldzellai/automcp-ts/issues)
+- Documentation: [Full documentation](https://waldzellai.github.io/automcp-ts)
+- Examples: [Example implementations](https://github.com/waldzellai/automcp-ts/tree/main/examples)
