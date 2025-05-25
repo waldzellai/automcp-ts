@@ -1,0 +1,81 @@
+frameworks:
+  crewai:
+    adapter_import: createCrewAIAdapter
+    adapter_module_path: automcp-ts/lib/adapters/crewai.js
+    import_comment: "// import { YourCrewAgent } from './your-module.js';"
+    adapter_definition: |
+      const mcpCrewai = createCrewAIAdapter(
+        YourCrewAgent,  // Replace with your actual CrewAI agent instance
+        name,
+        description,
+        InputSchema
+      );
+    adapter_variable_name: mcpCrewai
+
+  mcp_agent:
+    adapter_import: createMcpAgentAdapter
+    adapter_module_path: automcp-ts/lib/adapters/mcpAgent.js
+    import_comment: "// import { yourAgentClass, yourLlm, yourApp, yourAppInitializeFn } from './your-module.js';"
+    adapter_definition: |
+      const mcpAgent = createMcpAgentAdapter(
+        instanceOfYourAgentClass,
+        yourLlm, // MCP agent LLM eg OpenAIAugmentedLLM
+        yourApp, // MCP agent app 
+        yourAppInitializeFn, // MCP agent app initialize function
+        name,
+        description,
+        InputSchema
+      );
+    adapter_variable_name: mcpAgent
+
+  langgraph:
+    adapter_import: createLangGraphAdapter
+    adapter_module_path: automcp-ts/lib/adapters/langgraph.js
+    import_comment: "// import { YourLangGraphAgent } from './your-module.js';"
+    adapter_definition: |
+      const mcpLanggraphAgent = createLangGraphAdapter(
+        YourLangGraphAgent,  // Replace with your actual LangGraph agent instance
+        name,
+        description,
+        InputSchema
+      );
+    adapter_variable_name: mcpLanggraphAgent
+
+  pydantic:
+    adapter_import: createPydanticAdapter
+    adapter_module_path: automcp-ts/lib/adapters/pydantic.js
+    import_comment: "// import { YourPydanticAgent } from './your-module.js';"
+    adapter_definition: |
+      const mcpPydanticAgent = createPydanticAdapter(
+        YourPydanticAgent,  // Replace with your actual Pydantic agent instance
+        name,
+        description,
+        InputSchema
+      );
+    adapter_variable_name: mcpPydanticAgent
+  
+  llamaindex:
+    adapter_import: createLlamaIndexAdapter
+    adapter_module_path: automcp-ts/lib/adapters/llamaindex.js
+    import_comment: "// import { YourLlamaIndexAgent } from './your-module.js';"
+    adapter_definition: |
+      const mcpLlamaindexAgent = createLlamaIndexAdapter(
+        YourLlamaIndexAgent,  // Replace with your actual LlamaIndex agent instance
+        name,
+        description,
+        InputSchema
+      );
+    adapter_variable_name: mcpLlamaindexAgent
+
+  openai:
+    adapter_import: createOpenAIAdapter
+    adapter_module_path: automcp-ts/lib/adapters/openai.js
+    import_comment: "// import { YourOpenAIAgent } from './your-module.js';"
+    adapter_definition: |
+      const mcpOpenaiAgent = createOpenAIAdapter(
+        YourOpenAIAgent,  // Replace with your actual OpenAI agent instance
+        name,
+        description,
+        InputSchema
+      );
+    adapter_variable_name: mcpOpenaiAgent 

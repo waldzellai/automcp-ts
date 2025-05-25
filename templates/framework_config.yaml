@@ -1,0 +1,57 @@
+frameworks:
+  express:
+    adapter_import: "createExpressAdapter from '../src/adapters/express.js'"
+    import_comment: "// import { YourExpressAgent } from './your-agent-module';"
+    adapter_definition: |
+      const mcpExpressAgent = createExpressAdapter({
+        agentInstance: new YourExpressAgent(), // Replace with your actual Express agent instance
+        name: name,
+        description: description,
+        inputSchema: {
+          endpoint: z.string().describe('API endpoint'),
+          method: z.enum(['GET', 'POST', 'PUT', 'DELETE']).describe('HTTP method'),
+          data: z.record(z.any()).optional().describe('Request data')
+        }
+      });
+
+  fastapi:
+    adapter_import: "createFastAPIAdapter from '../src/adapters/fastapi.js'"
+    import_comment: "// import { YourFastAPIAgent } from './your-agent-module';"
+    adapter_definition: |
+      const mcpFastAPIAgent = createFastAPIAdapter({
+        agentInstance: new YourFastAPIAgent(), // Replace with your actual FastAPI agent instance
+        name: name,
+        description: description,
+        inputSchema: {
+          query: z.string().describe('API query'),
+          parameters: z.record(z.any()).optional().describe('Query parameters')
+        }
+      });
+
+  nestjs:
+    adapter_import: "createNestJSAdapter from '../src/adapters/nestjs.js'"
+    import_comment: "// import { YourNestJSService } from './your-service-module';"
+    adapter_definition: |
+      const mcpNestJSAgent = createNestJSAdapter({
+        agentInstance: new YourNestJSService(), // Replace with your actual NestJS service instance
+        name: name,
+        description: description,
+        inputSchema: {
+          action: z.string().describe('Service action to perform'),
+          payload: z.record(z.any()).optional().describe('Action payload')
+        }
+      });
+
+  custom:
+    adapter_import: "createCustomAdapter from '../src/adapters/custom.js'"
+    import_comment: "// import { YourCustomAgent } from './your-custom-module';"
+    adapter_definition: |
+      const mcpCustomAgent = createCustomAdapter({
+        agentInstance: new YourCustomAgent(), // Replace with your actual custom agent instance
+        name: name,
+        description: description,
+        inputSchema: {
+          input: z.string().describe('Agent input'),
+          options: z.record(z.any()).optional().describe('Additional options')
+        }
+      }); 

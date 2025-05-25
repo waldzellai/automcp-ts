@@ -1,0 +1,141 @@
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { z } from 'zod';
+import express from 'express';
+import { randomUUID } from 'node:crypto';
+import { {{adapter_import}};
+
+// Create MCP server
+const server = new McpServer({
+  name: 'MCP Server',
+  version: '1.0.0'
+});
+
+// You'll need to replace these imports with your actual {{framework}} objects
+{{import_comment}}
+
+// Define the input schema for your {{framework}}
+const InputSchema = z.object({
+  // Replace these with your actual input parameters
+  query: z.string().describe('The main query or input for your agent'),
+  // Add more parameters as needed
+});
+
+type InputType = z.infer<typeof InputSchema>;
+
+const name = 'Your Agent Name';
+const description = 'Description of what your agent does';
+
+// Create an adapter for {{framework}}
+{{adapter_definition}}
+
+// Add the tool to the server
+server.tool(
+  name,
+  InputSchema,
+  {{adapter_variable_name}}
+);
+
+// Server entrypoints
+async function serveStdio() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.log('MCP Server running on stdio');
+}
+
+async function serveSSE() {
+  const app = express();
+  app.use(express.json());
+
+  // Map to store transports by session ID
+  const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
+
+  // Handle POST requests for client-to-server communication
+  app.post('/mcp', async (req, res) => {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    let transport: StreamableHTTPServerTransport;
+
+    if (sessionId && transports[sessionId]) {
+      transport = transports[sessionId];
+    } else {
+      transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        onsessioninitialized: (sessionId) => {
+          transports[sessionId] = transport;
+        }
+      });
+
+      transport.onclose = () => {
+        if (transport.sessionId) {
+          delete transports[transport.sessionId];
+        }
+      };
+
+      await server.connect(transport);
+    }
+
+    await transport.handleRequest(req, res, req.body);
+  });
+
+  // Handle GET requests for server-to-client notifications
+  app.get('/mcp', async (req, res) => {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    if (!sessionId || !transports[sessionId]) {
+      res.status(400).send('Invalid or missing session ID');
+      return;
+    }
+    
+    const transport = transports[sessionId];
+    await transport.handleRequest(req, res);
+  });
+
+  // Handle DELETE requests for session termination
+  app.delete('/mcp', async (req, res) => {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    if (!sessionId || !transports[sessionId]) {
+      res.status(400).send('Invalid or missing session ID');
+      return;
+    }
+    
+    const transport = transports[sessionId];
+    await transport.handleRequest(req, res);
+  });
+
+  const PORT = process.env.PORT || 8000;
+  app.listen(PORT, () => {
+    console.log(`MCP Server running on http://localhost:${PORT}`);
+  });
+}
+
+// Main execution
+async function main() {
+  const args = process.argv.slice(2);
+  const transport = args[0] || 'stdio';
+
+  try {
+    if (transport === 'sse') {
+      await serveSSE();
+    } else {
+      await serveStdio();
+    }
+  } catch (error) {
+    console.error('Error starting MCP server:', error);
+    process.exit(1);
+  }
+}
+
+// Handle graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\nShutting down MCP server...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('\nShutting down MCP server...');
+  process.exit(0);
+});
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(console.error);
+} 

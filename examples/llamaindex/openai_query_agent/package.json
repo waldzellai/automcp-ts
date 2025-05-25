@@ -1,0 +1,38 @@
+{
+  "name": "llamaindex-openai-query-agent",
+  "version": "0.1.0",
+  "description": "LlamaIndex OpenAI Query Agent in TypeScript",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "serve:stdio": "npm run build && node dist/run-mcp.js",
+    "serve:sse": "npm run build && node dist/run-mcp.js sse"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "llamaindex": "^0.7.0",
+    "@llamaindex/openai": "^0.7.0",
+    "@llamaindex/pinecone": "^0.7.0",
+    "dotenv": "^16.5.0",
+    "zod": "^3.22.0",
+    "sqlite3": "^5.1.0",
+    "pinecone": "^1.0.0",
+    "wikipedia": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/sqlite3": "^3.1.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "llamaindex",
+    "openai",
+    "vector-search",
+    "query-agent",
+    "typescript"
+  ]
+} 
