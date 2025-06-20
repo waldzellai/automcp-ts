@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { DEFAULT_NEGOTIATED_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import express from 'express';
 import { randomUUID } from 'node:crypto';
@@ -54,6 +55,8 @@ async function serveSSE() {
   // Handle POST requests for client-to-server communication
   app.post('/mcp', async (req, res) => {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    const protocolVersion = (req.headers['mcp-protocol-version'] as string | undefined) ?? DEFAULT_NEGOTIATED_PROTOCOL_VERSION;
+    res.setHeader('MCP-Protocol-Version', protocolVersion);
     let transport: StreamableHTTPServerTransport;
 
     if (sessionId && transports[sessionId]) {
@@ -81,6 +84,8 @@ async function serveSSE() {
   // Handle GET requests for server-to-client notifications
   app.get('/mcp', async (req, res) => {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    const protocolVersion = (req.headers['mcp-protocol-version'] as string | undefined) ?? DEFAULT_NEGOTIATED_PROTOCOL_VERSION;
+    res.setHeader('MCP-Protocol-Version', protocolVersion);
     if (!sessionId || !transports[sessionId]) {
       res.status(400).send('Invalid or missing session ID');
       return;
@@ -93,6 +98,8 @@ async function serveSSE() {
   // Handle DELETE requests for session termination
   app.delete('/mcp', async (req, res) => {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
+    const protocolVersion = (req.headers['mcp-protocol-version'] as string | undefined) ?? DEFAULT_NEGOTIATED_PROTOCOL_VERSION;
+    res.setHeader('MCP-Protocol-Version', protocolVersion);
     if (!sessionId || !transports[sessionId]) {
       res.status(400).send('Invalid or missing session ID');
       return;
