@@ -15,6 +15,16 @@ export interface ToolResult {
     type: string;
     text: string;
   }>;
+  /** Optional structured JSON output */
+  structuredContent?: any;
+  /** Optional list of resource links related to the result */
+  resource_links?: Array<{
+    type?: 'resource_link';
+    name: string;
+    uri: string;
+    description?: string;
+    mimeType?: string;
+  }>;
   isError?: boolean;
 }
 
@@ -58,15 +68,29 @@ export abstract class BaseAdapter<T extends InputSchemaType> {
         
         // Ensure the result is serializable
         const serializedResult = this.ensureSerializable(result);
-        
-        return {
+
+        if (serializedResult && typeof serializedResult === 'object' && 'content' in serializedResult) {
+          // If the agent already returned a ToolResult-like object, pass through
+          return serializedResult as ToolResult;
+        }
+
+        const toolResult: ToolResult = {
           content: [{
             type: "text",
-            text: typeof serializedResult === 'string' 
-              ? serializedResult 
+            text: typeof serializedResult === 'string'
+              ? serializedResult
               : JSON.stringify(serializedResult, null, 2)
           }]
         };
+
+        if (serializedResult && typeof serializedResult === 'object') {
+          toolResult.structuredContent = serializedResult;
+          if ('resource_links' in serializedResult) {
+            toolResult.resource_links = (serializedResult as any).resource_links;
+          }
+        }
+
+        return toolResult;
       } catch (error) {
         return {
           content: [{

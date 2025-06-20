@@ -218,6 +218,13 @@ const MyModel = createModel({
 });
 ```
 
+### Structured Tool Results
+
+When a tool returns a JavaScript object, adapters now expose this value under the
+`structuredContent` field of the `ToolResult`. A formatted string version is also
+included in the `content` array for compatibility. Tools can additionally supply
+an optional `resource_links` array to reference external resources.
+
 ## Configuration
 
 Framework configurations are stored in YAML files:

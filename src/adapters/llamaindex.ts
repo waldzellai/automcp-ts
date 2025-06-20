@@ -1,3 +1,6 @@
+import { ToolResult } from './base.js';
+import { ensureSerializable } from './utils.js';
+
 interface BaseModel {
   [key: string]: any;
   model_dump(): Record<string, any>;
@@ -41,8 +44,8 @@ export function createLlamaIndexAdapter(
   description: string,
   inputSchema: ModelClass,
   ContextClass: new (agent: any) => LlamaIndexContext = MockContext
-): (...args: any[]) => Promise<string> {
-  const runAgent = async (...args: any[]): Promise<string> => {
+): (...args: any[]) => Promise<ToolResult> {
+  const runAgent = async (...args: any[]): Promise<ToolResult> => {
     // Convert args to object based on schema
     const kwargs: Record<string, any> = {};
     
@@ -80,7 +83,14 @@ export function createLlamaIndexAdapter(
       // Run the agent with input values and context
       const inputValues = Object.values(inputDict);
       const response = await agentInstance.run(...inputValues);
-      return String(response);
+      if (response && typeof response === 'object') {
+        const output = ensureSerializable(response);
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+          structuredContent: output
+        };
+      }
+      return { content: [{ type: 'text', text: String(response) }] };
     } finally {
       // Restore original console methods
       console.log = originalLog;
@@ -105,10 +115,10 @@ export function createTypedLlamaIndexAdapter<T extends BaseModel>(
   description: string,
   inputSchema: ModelClass,
   ContextClass?: new (agent: any) => LlamaIndexContext
-): (input: T) => Promise<string> {
+): (input: T) => Promise<ToolResult> {
   const adapter = createLlamaIndexAdapter(agentInstance, name, description, inputSchema, ContextClass);
-  
-  return async (input: T): Promise<string> => {
+
+  return async (input: T): Promise<ToolResult> => {
     return await adapter(input);
   };
 }

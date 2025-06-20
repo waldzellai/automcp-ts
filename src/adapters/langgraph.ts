@@ -1,4 +1,5 @@
 import { ensureSerializable } from './utils.js';
+import { ToolResult } from './base.js';
 
 interface BaseModel {
   [key: string]: any;
@@ -28,8 +29,8 @@ export function createLangGraphAdapter(
   name: string,
   description: string,
   inputSchema: ModelClass
-): (...args: any[]) => Promise<any> {
-  const runAgent = async (...args: any[]): Promise<any> => {
+): (...args: any[]) => Promise<ToolResult> {
+  const runAgent = async (...args: any[]): Promise<ToolResult> => {
     // Convert args to object based on schema
     const kwargs: Record<string, any> = {};
     
@@ -65,7 +66,14 @@ export function createLangGraphAdapter(
     try {
       // Call the async invoke method
       const result = await agentInstance.ainvoke(inputDict);
-      return ensureSerializable(result);
+      const output = ensureSerializable(result);
+      if (output && typeof output === 'object') {
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+          structuredContent: output
+        };
+      }
+      return { content: [{ type: 'text', text: String(output) }] };
     } finally {
       // Restore original console methods
       console.log = originalLog;
@@ -89,10 +97,10 @@ export function createTypedLangGraphAdapter<T extends BaseModel>(
   name: string,
   description: string,
   inputSchema: ModelClass
-): (input: T) => Promise<any> {
+): (input: T) => Promise<ToolResult> {
   const adapter = createLangGraphAdapter(agentInstance, name, description, inputSchema);
-  
-  return async (input: T): Promise<any> => {
+
+  return async (input: T): Promise<ToolResult> => {
     return await adapter(input);
   };
 }

@@ -1,3 +1,5 @@
+import { ToolResult } from './base.js';
+
 interface BaseModel {
   [key: string]: any;
   model_dump(): Record<string, any>;
@@ -40,8 +42,8 @@ export function createOpenAIAdapter(
   description: string,
   inputSchema: ModelClass,
   runner: Runner = MockRunner
-): (...args: any[]) => Promise<any> {
-  const runAgent = async (...args: any[]): Promise<any> => {
+): (...args: any[]) => Promise<ToolResult> {
+  const runAgent = async (...args: any[]): Promise<ToolResult> => {
     // Convert args to object based on schema
     const kwargs: Record<string, any> = {};
     
@@ -77,7 +79,19 @@ export function createOpenAIAdapter(
     try {
       // Run the agent with input values
       const result = await runner.run(agentInstance, ...Object.values(inputDict));
-      return result.final_output;
+      const output = result.final_output;
+      if (output && typeof output === 'object') {
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(output, null, 2)
+          }],
+          structuredContent: output
+        };
+      }
+      return {
+        content: [{ type: 'text', text: String(output) }]
+      };
     } finally {
       // Restore original console methods
       console.log = originalLog;
@@ -102,10 +116,10 @@ export function createTypedOpenAIAdapter<T extends BaseModel>(
   description: string,
   inputSchema: ModelClass,
   runner?: Runner
-): (input: T) => Promise<any> {
+): (input: T) => Promise<ToolResult> {
   const adapter = createOpenAIAdapter(agentInstance, name, description, inputSchema, runner);
-  
-  return async (input: T): Promise<any> => {
+
+  return async (input: T): Promise<ToolResult> => {
     return await adapter(input);
   };
-} 
+}

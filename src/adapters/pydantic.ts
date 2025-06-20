@@ -1,3 +1,5 @@
+import { ToolResult } from './base.js';
+
 interface BaseModel {
   [key: string]: any;
   query?: string;
@@ -31,8 +33,8 @@ export function createPydanticAdapter(
   name: string,
   description: string,
   inputSchema: ModelClass
-): (...args: any[]) => Promise<any> {
-  const runAgent = async (...args: any[]): Promise<any> => {
+): (...args: any[]) => Promise<ToolResult> {
+  const runAgent = async (...args: any[]): Promise<ToolResult> => {
     // Convert args to object based on schema
     const kwargs: Record<string, any> = {};
     
@@ -67,17 +69,27 @@ export function createPydanticAdapter(
     try {
       // Call the async run method
       const result = await agentInstance.run(inputData.query || '');
-      
-      // Process the result
+
+      let output: any = result;
+
       if (result && typeof result === 'object') {
         if ('data' in result) {
-          return result.data;
+          output = result.data;
         } else if ('raw' in result) {
-          return result.raw;
+          output = result.raw;
         }
       }
-      
-      return result;
+
+      if (output && typeof output === 'object') {
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+          structuredContent: output
+        };
+      }
+
+      return {
+        content: [{ type: 'text', text: String(output) }]
+      };
     } finally {
       // Restore original console methods
       console.log = originalLog;
@@ -101,10 +113,10 @@ export function createTypedPydanticAdapter<T extends BaseModel>(
   name: string,
   description: string,
   inputSchema: ModelClass
-): (input: T) => Promise<any> {
+): (input: T) => Promise<ToolResult> {
   const adapter = createPydanticAdapter(agentInstance, name, description, inputSchema);
-  
-  return async (input: T): Promise<any> => {
+
+  return async (input: T): Promise<ToolResult> => {
     return await adapter(input);
   };
 }
