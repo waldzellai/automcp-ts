@@ -1,3 +1,5 @@
+import { ToolResult } from './base.js';
+
 interface BaseModel {
   [key: string]: any;
 }
@@ -34,9 +36,9 @@ export function createMcpAgentAdapter(
   name: string,
   description: string,
   inputSchema: ModelClass
-): (...args: any[]) => Promise<any> {
+): (...args: any[]) => Promise<ToolResult> {
   // Define the wrapper function
-  const runAgent = async (...args: any[]): Promise<any> => {
+  const runAgent = async (...args: any[]): Promise<ToolResult> => {
     // Convert args to object based on schema (simplified approach)
     const kwargs: Record<string, any> = {};
     if (args.length === 1 && typeof args[0] === 'object') {
@@ -82,12 +84,22 @@ export function createMcpAgentAdapter(
         resultPromise,
         taskPromise.then(() => resultPromise) // Ensure we wait for the task to complete
       ]);
-      return result;
+      if (result && typeof result === 'object') {
+        const output = result;
+        return {
+          content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+          structuredContent: output
+        };
+      }
+      return { content: [{ type: 'text', text: String(result) }] };
     } catch (error) {
       // Log any exceptions but don't re-raise unless it's a cancellation
       if (error instanceof Error) {
         console.error('Agent execution error:', error.stack || error.message);
-        return { status: 'error', message: error.message };
+        return {
+          content: [{ type: 'text', text: error.message }],
+          isError: true
+        };
       }
       throw error;
     }

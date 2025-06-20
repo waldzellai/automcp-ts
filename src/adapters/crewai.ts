@@ -1,4 +1,5 @@
 import { ensureSerializable } from './utils.js';
+import { ToolResult } from './base.js';
 
 interface BaseModel {
   [key: string]: any;
@@ -33,8 +34,8 @@ export function createCrewAIAdapter(
   name: string,
   description: string,
   inputSchema: ModelClass
-): (...args: any[]) => string {
-  const runAgent = (...args: any[]): string => {
+): (...args: any[]) => ToolResult {
+  const runAgent = (...args: any[]): ToolResult => {
     // Convert args to object based on schema
     const kwargs: Record<string, any> = {};
     
@@ -69,7 +70,11 @@ export function createCrewAIAdapter(
     try {
       // Execute CrewAI kickoff
       const result = agentInstance.kickoff({ inputs: inputs.model_dump() });
-      return result.model_dump_json();
+      const outputObj = ensureSerializable(result.model_dump());
+      return {
+        content: [{ type: 'text', text: JSON.stringify(outputObj, null, 2) }],
+        structuredContent: outputObj
+      };
     } finally {
       // Restore original console methods
       console.log = originalLog;
@@ -93,10 +98,10 @@ export function createTypedCrewAIAdapter<T extends BaseModel>(
   name: string,
   description: string,
   inputSchema: ModelClass
-): (input: T) => string {
+): (input: T) => ToolResult {
   const adapter = createCrewAIAdapter(agentInstance, name, description, inputSchema);
-  
-  return (input: T): string => {
+
+  return (input: T): ToolResult => {
     return adapter(input);
   };
 }

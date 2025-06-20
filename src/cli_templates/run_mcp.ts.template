@@ -37,6 +37,9 @@ server.tool(
   {{adapter_variable_name}}
 );
 
+// If your agent returns an object, the adapter will expose it as `structuredContent`
+// in addition to a text representation in the content array.
+
 // Server entrypoints
 async function serveStdio() {
   // Suppress console output that might interfere with STDIO transport

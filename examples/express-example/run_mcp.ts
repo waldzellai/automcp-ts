@@ -44,6 +44,8 @@ server.tool(
   mcpExpressAgent
 );
 
+// WeatherAPIAgent returns objects, so structuredContent will be included in the result
+
 // Server entrypoints
 async function serveStdio() {
   const transport = new StdioServerTransport();
