@@ -92,6 +92,13 @@ npm run serve
 npm run serve:sse
 ```
 
+### Protocol Version Negotiation
+
+When using the HTTP/SSE transport, clients should include an `MCP-Protocol-Version`
+header on each request. If omitted, the server falls back to the SDK's
+`DEFAULT_NEGOTIATED_PROTOCOL_VERSION`. Every HTTP response from the server will
+echo this header so clients can confirm the negotiated protocol version.
+
 ## Adapter API Reference
 
 ### Common Interfaces
