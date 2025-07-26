@@ -2,11 +2,11 @@
 
 import { Command } from 'commander';
 import { readFile, writeFile, access } from 'fs/promises';
+import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'yaml';
 import { spawn } from 'child_process';
-import { promisify } from 'util';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -160,10 +160,14 @@ async function serveCommand(transport: 'stdio' | 'sse'): Promise<void> {
 }
 
 function loadAvailableFrameworks(): string[] {
-  // For now, return a hardcoded list. In production, this would read from the config file
-  return [
-    'fastapi', 'express', 'nestjs', 'custom'
-  ];
+  try {
+    const configContent = readFileSync(CONFIG_FILE, 'utf-8');
+    const config = yaml.parse(configContent) as Config;
+    return Object.keys(config.frameworks);
+  } catch (error) {
+    console.error(`Error loading framework configuration: ${error}`);
+    return [];
+  }
 }
 
 const program = new Command();
