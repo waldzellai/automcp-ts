@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { readFile, writeFile, access } from 'fs/promises';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'yaml';
@@ -109,6 +109,91 @@ async function initCommand(framework: string): Promise<void> {
   console.log('   - tsx run_mcp.ts        # Direct execution');
 }
 
+async function ensureProjectDependencies(directory: string): Promise<void> {
+  const packageJsonPath = join(directory, 'package.json');
+  let pkg: any = null;
+
+  if (!existsSync(packageJsonPath)) {
+    // Minimal package.json
+    pkg = {
+      name: 'mcp-server',
+      version: '1.0.0',
+      type: 'module',
+      scripts: {
+        serve: 'tsx run_mcp.ts',
+        'serve:sse': 'tsx run_mcp.ts sse'
+      },
+      dependencies: {
+        '@modelcontextprotocol/sdk': '^1.12.0',
+        zod: '^3.22.4',
+        express: '^4.18.2',
+        'automcp-ts': '^0.1.0'
+      },
+      devDependencies: {
+        tsx: '^4.6.0',
+        '@types/node': '^20.10.0',
+        '@types/express': '^4.17.21'
+      }
+    };
+    await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2));
+    console.log('Created package.json');
+  } else {
+    // Read and update
+    const current = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+    current.scripts ||= {};
+    current.scripts.serve ||= 'tsx run_mcp.ts';
+    current.scripts['serve:sse'] ||= 'tsx run_mcp.ts sse';
+    current.dependencies ||= {};
+    current.devDependencies ||= {};
+
+    const requiredDeps: Record<string, string> = {
+      '@modelcontextprotocol/sdk': '^1.12.0',
+      zod: '^3.22.4',
+      express: '^4.18.2',
+      'automcp-ts': '^0.1.0'
+    };
+    const requiredDevDeps: Record<string, string> = {
+      tsx: '^4.6.0',
+      '@types/node': '^20.10.0',
+      '@types/express': '^4.17.21'
+    };
+
+    let changed = false;
+    for (const [dep, ver] of Object.entries(requiredDeps)) {
+      if (!current.dependencies[dep]) {
+        current.dependencies[dep] = ver;
+        changed = true;
+      }
+    }
+    for (const [dep, ver] of Object.entries(requiredDevDeps)) {
+      if (!current.devDependencies[dep]) {
+        current.devDependencies[dep] = ver;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await writeFile(packageJsonPath, JSON.stringify(current, null, 2));
+      console.log('Updated package.json with required dependencies');
+    }
+    pkg = current;
+  }
+
+  // npm install if node_modules missing
+  const nodeModulesPath = join(directory, 'node_modules');
+  if (!existsSync(nodeModulesPath)) {
+    console.log('Installing dependencies (npm install)...');
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn('npm', ['install', '--no-fund', '--no-audit'], { stdio: 'inherit', cwd: directory });
+      child.on('exit', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`npm install failed with code ${code}`));
+      });
+      child.on('error', reject);
+    });
+  }
+}
+
 async function serveCommand(transport: 'stdio' | 'sse'): Promise<void> {
   console.log(`Running AutoMCP-TS server with ${transport} transport`);
   const currentDir = process.cwd();
@@ -120,38 +205,19 @@ async function serveCommand(transport: 'stdio' | 'sse'): Promise<void> {
     throw new Error('run_mcp.ts not found in current directory');
   }
 
-  // Check for package.json and install dependencies if needed
-  const packageJsonPath = join(currentDir, 'package.json');
+  // One-command environment bootstrap
   try {
-    await access(packageJsonPath);
-  } catch {
-    console.log('No package.json found, creating one...');
-    const packageJson = {
-      "name": "mcp-server",
-      "version": "1.0.0",
-      "type": "module",
-      "scripts": {
-        "serve": "tsx run_mcp.ts",
-        "serve:sse": "tsx run_mcp.ts sse"
-      },
-      "dependencies": {
-        "@modelcontextprotocol/sdk": "^1.12.0",
-        "zod": "^3.22.4"
-      },
-      "devDependencies": {
-        "tsx": "^4.6.0",
-        "@types/node": "^20.10.0"
-      }
-    };
-    await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
-    console.log('Created package.json');
+    await ensureProjectDependencies(currentDir);
+  } catch (error) {
+    console.error(`Dependency setup failed: ${error}`);
+    process.exit(1);
   }
 
   try {
     if (transport === 'stdio') {
-      spawn('tsx', [mcpFile], { stdio: 'inherit' });
+      spawn('npx', ['-y', 'tsx', mcpFile], { stdio: 'inherit' });
     } else {
-      spawn('tsx', [mcpFile, 'sse'], { stdio: 'inherit' });
+      spawn('npx', ['-y', 'tsx', mcpFile, 'sse'], { stdio: 'inherit' });
     }
   } catch (error) {
     console.error(`Error running AutoMCP-TS server: ${error}`);
@@ -168,6 +234,58 @@ function loadAvailableFrameworks(): string[] {
     console.error(`Error loading framework configuration: ${error}`);
     return [];
   }
+}
+
+function toPascalCase(name: string): string {
+  return name
+    .replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
+    .replace(/^(.)/, (m) => m.toUpperCase());
+}
+
+async function generateAdapterCommand(frameworkName: string): Promise<void> {
+  const currentDir = process.cwd();
+  const safeName = frameworkName.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  const pascal = toPascalCase(safeName);
+  const fileName = `${safeName}.adapter.ts`;
+  const filePath = join(currentDir, fileName);
+
+  const content = `import { z } from 'zod';
+import { BaseAdapter, AdapterConfig, ToolResult } from 'automcp-ts/lib/adapters/base.js';
+
+class ${pascal}Adapter<T extends Record<string, z.ZodTypeAny>> extends BaseAdapter<T> {
+  protected async executeAgent(inputs: z.infer<z.ZodObject<T>>): Promise<any> {
+    // TODO: Replace with your framework's invocation logic.
+    // Example patterns to adapt:
+    // return await (this.agentInstance.run?.(inputs)
+    //   ?? this.agentInstance.invoke?.(inputs)
+    //   ?? this.agentInstance.kickoff?.({ inputs })
+    // );
+    throw new Error('executeAgent not implemented for ${pascal}Adapter');
+  }
+}
+
+export function create${pascal}Adapter<T extends Record<string, z.ZodTypeAny>>(
+  agentInstance: any,
+  name: string,
+  description: string,
+  inputSchema: T
+) {
+  const adapter = new ${pascal}Adapter<T>({
+    agentInstance,
+    name,
+    description,
+    inputSchema,
+  } as AdapterConfig<T>);
+  return adapter.createToolFunction();
+}
+`;
+
+  await writeFile(filePath, content);
+  console.log(`Created adapter skeleton at ${filePath}`);
+  console.log('Usage:');
+  console.log(`  // In your run_mcp.ts`);
+  console.log(`  import { create${pascal}Adapter } from './${fileName.replace('.ts', '.js')}';`);
+  console.log(`  const tool = create${pascal}Adapter(new YourAgent(), name, description, InputSchema.shape);`);
 }
 
 const program = new Command();
@@ -202,6 +320,14 @@ program
       process.exit(1);
     }
     await serveCommand(options.transport as 'stdio' | 'sse');
+  });
+
+program
+  .command('generate-adapter')
+  .description('Generate a from-scratch adapter skeleton in the current directory')
+  .requiredOption('-n, --name <frameworkName>', 'Framework name for the new adapter')
+  .action(async (options) => {
+    await generateAdapterCommand(options.name as string);
   });
 
 program.parse(); 

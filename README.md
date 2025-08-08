@@ -55,6 +55,13 @@ automcp-ts init --framework langgraph
 
 This creates a `run_mcp.ts` file with a template for your chosen framework.
 
+Optionally, scaffold a new adapter from scratch:
+
+```bash
+automcp-ts generate-adapter --name myframework
+# Creates ./myframework.adapter.ts with a typed adapter skeleton
+```
+
 ### 2. Configure Your Agent
 
 Edit the generated `run_mcp.ts` file:
@@ -85,11 +92,14 @@ server.tool('my-agent', InputSchema, mcpAgent);
 ### 3. Run Your Server
 
 ```bash
-# STDIO transport (for Claude Desktop)
+# One-command bootstrap + run (installs deps if needed)
+automcp-ts serve --transport stdio
+
+# Or via npm scripts (after first run initializes package.json)
 npm run serve
 
-# HTTP/SSE transport (for web applications)
-npm run serve:sse
+# HTTP Streamable transport (for web applications)
+automcp-ts serve --transport sse
 ```
 
 ### Protocol Version Negotiation
