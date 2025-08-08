@@ -3,7 +3,7 @@ import { ToolResult } from './base.js';
 
 interface BaseModel {
   [key: string]: any;
-  model_dump(): Record<string, any>;
+  model_dump?(): Record<string, any>;
 }
 
 interface FieldInfo {
@@ -18,54 +18,70 @@ interface ModelClass {
 }
 
 interface LangGraphAgent {
-  ainvoke(input: Record<string, any>): Promise<any>;
+  ainvoke?(input: Record<string, any>): Promise<any>;
+  invoke?(input: Record<string, any>): Promise<any>;
 }
 
 /**
- * Convert a graph object to an MCP tool, making it async.
+ * Convert a LangGraph agent/graph to an MCP tool.
  */
 export function createLangGraphAdapter(
   agentInstance: LangGraphAgent,
   name: string,
   description: string,
-  inputSchema: ModelClass
+  inputSchema?: ModelClass
 ): (...args: any[]) => Promise<ToolResult> {
   const runAgent = async (...args: any[]): Promise<ToolResult> => {
-    // Convert args to object based on schema
-    const kwargs: Record<string, any> = {};
-    
-    // If args is a single object, use it directly
+    // Prefer a single params object (as provided by MCP server.tool)
+    let params: Record<string, any> = {};
+
     if (args.length === 1 && typeof args[0] === 'object' && !Array.isArray(args[0])) {
-      Object.assign(kwargs, args[0]);
-    } else {
-      // Otherwise, map positional args to schema fields
+      params = args[0] as Record<string, any>;
+    } else if (inputSchema && inputSchema.model_fields) {
+      // Positional mapping fallback for Pydantic-like model classes
       const schemaFields = inputSchema.model_fields || {};
       const fieldNames = Object.keys(schemaFields);
       fieldNames.forEach((fieldName, index) => {
         if (index < args.length) {
-          kwargs[fieldName] = args[index];
+          params[fieldName] = args[index];
         }
       });
     }
-    
-    // Create the input object
-    const inputData = new inputSchema(kwargs);
-    const inputDict = inputData.model_dump();
-    
-    // Redirect stdout equivalent (capture console output)
+
+    // Create the input object if a Pydantic-like class is provided
+    let inputDict: Record<string, any> = params;
+    if (inputSchema && typeof inputSchema === 'function') {
+      try {
+        const instance = new inputSchema(params);
+        if (typeof instance.model_dump === 'function') {
+          inputDict = instance.model_dump();
+        }
+      } catch {
+        // Ignore and use params directly
+      }
+    }
+
+    // Capture console output to avoid interfering with transports
     const originalLog = console.log;
     const originalWarn = console.warn;
     const originalError = console.error;
     const outputBuffer: string[] = [];
-    
-    // Override console methods to capture output
-    console.log = (...args) => outputBuffer.push(args.join(' '));
-    console.warn = (...args) => outputBuffer.push(args.join(' '));
-    console.error = (...args) => outputBuffer.push(args.join(' '));
-    
+
+    console.log = (...a) => outputBuffer.push(a.join(' '));
+    console.warn = (...a) => outputBuffer.push(a.join(' '));
+    console.error = (...a) => outputBuffer.push(a.join(' '));
+
     try {
-      // Call the async invoke method
-      const result = await agentInstance.ainvoke(inputDict);
+      // Call invoke/ainvoke depending on availability
+      let result: any;
+      if (typeof agentInstance.ainvoke === 'function') {
+        result = await agentInstance.ainvoke(inputDict);
+      } else if (typeof agentInstance.invoke === 'function') {
+        result = await agentInstance.invoke(inputDict);
+      } else {
+        throw new Error('Provided LangGraph agent does not implement invoke or ainvoke');
+      }
+
       const output = ensureSerializable(result);
       if (output && typeof output === 'object') {
         return {
@@ -75,17 +91,15 @@ export function createLangGraphAdapter(
       }
       return { content: [{ type: 'text', text: String(output) }] };
     } finally {
-      // Restore original console methods
       console.log = originalLog;
       console.warn = originalWarn;
       console.error = originalError;
     }
   };
-  
-  // Add proper function metadata
+
   Object.defineProperty(runAgent, 'name', { value: name });
   Object.defineProperty(runAgent, 'description', { value: description });
-  
+
   return runAgent;
 }
 
@@ -96,7 +110,7 @@ export function createTypedLangGraphAdapter<T extends BaseModel>(
   agentInstance: LangGraphAgent,
   name: string,
   description: string,
-  inputSchema: ModelClass
+  inputSchema?: ModelClass
 ): (input: T) => Promise<ToolResult> {
   const adapter = createLangGraphAdapter(agentInstance, name, description, inputSchema);
 
@@ -109,11 +123,10 @@ export function createTypedLangGraphAdapter<T extends BaseModel>(
  * Mock LangGraph agent for testing
  */
 export class MockLangGraphAgent implements LangGraphAgent {
-  async ainvoke(input: Record<string, any>): Promise<any> {
-    // Mock implementation - would need to be replaced with actual LangGraph equivalent
+  async invoke(input: Record<string, any>): Promise<any> {
     return {
-      result: "Mock LangGraph result",
-      input: input,
+      result: 'Mock LangGraph result',
+      input,
       processed: true
     };
   }
