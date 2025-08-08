@@ -3,7 +3,7 @@ import { ToolResult } from './base.js';
 
 interface BaseModel {
   [key: string]: any;
-  model_dump(): Record<string, any>;
+  model_dump?(): Record<string, any>;
 }
 
 interface FieldInfo {
@@ -34,8 +34,8 @@ export function createCrewAIAdapter(
   name: string,
   description: string,
   inputSchema: ModelClass
-): (...args: any[]) => ToolResult {
-  const runAgent = (...args: any[]): ToolResult => {
+): (...args: any[]) => Promise<ToolResult> {
+  const runAgent = async (...args: any[]): Promise<ToolResult> => {
     // Convert args to object based on schema
     const kwargs: Record<string, any> = {};
     
@@ -69,7 +69,7 @@ export function createCrewAIAdapter(
     
     try {
       // Execute CrewAI kickoff
-      const result = agentInstance.kickoff({ inputs: inputs.model_dump() });
+      const result = agentInstance.kickoff({ inputs: inputs.model_dump ? inputs.model_dump() : inputs });
       const outputObj = ensureSerializable(result.model_dump());
       return {
         content: [{ type: 'text', text: JSON.stringify(outputObj, null, 2) }],
@@ -98,10 +98,10 @@ export function createTypedCrewAIAdapter<T extends BaseModel>(
   name: string,
   description: string,
   inputSchema: ModelClass
-): (input: T) => ToolResult {
+): (input: T) => Promise<ToolResult> {
   const adapter = createCrewAIAdapter(agentInstance, name, description, inputSchema);
 
-  return (input: T): ToolResult => {
+  return async (input: T): Promise<ToolResult> => {
     return adapter(input);
   };
 }
