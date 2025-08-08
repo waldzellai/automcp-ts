@@ -5,7 +5,7 @@ import { DEFAULT_NEGOTIATED_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/t
 import { z } from 'zod';
 import express from 'express';
 import { randomUUID } from 'node:crypto';
-import { {{adapter_import}};
+import { {{adapter_import}} } from '{{adapter_module_path}}';
 
 // Create MCP server
 const server = new McpServer({
