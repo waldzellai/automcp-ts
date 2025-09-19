@@ -2,16 +2,18 @@
 
 import { Command } from 'commander';
 import { readFile, writeFile, access } from 'fs/promises';
-import { readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'yaml';
-import { spawn } from 'child_process';
+import { spawn, type SpawnOptions } from 'child_process';
+import { Effect, Data } from 'effect';
+
+type StringRecord = Record<string, string>;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Template and config file locations
 const TEMPLATE_FILE = join(__dirname, '../templates/run_mcp.ts.template');
 const CONFIG_FILE = join(__dirname, '../templates/framework_config.yaml');
 
@@ -25,231 +27,404 @@ interface Config {
   frameworks: Record<string, FrameworkConfig>;
 }
 
-async function createMcpServerFile(directory: string, framework: string): Promise<void> {
-  // Check if the unified template exists
+class TemplateFileError extends Data.TaggedError('TemplateFileError')<{
+  path: string;
+  cause: unknown;
+}> {}
+
+class ConfigFileError extends Data.TaggedError('ConfigFileError')<{
+  path: string;
+  reason: 'read' | 'parse';
+  cause: unknown;
+}> {}
+
+class InvalidFrameworkError extends Data.TaggedError('InvalidFrameworkError')<{
+  framework: string;
+  available: ReadonlyArray<string>;
+}> {}
+
+class FileWriteError extends Data.TaggedError('FileWriteError')<{
+  path: string;
+  cause: unknown;
+}> {}
+
+class FileReadError extends Data.TaggedError('FileReadError')<{
+  path: string;
+  cause: unknown;
+}> {}
+
+class JsonParseError extends Data.TaggedError('JsonParseError')<{
+  path: string;
+  cause: unknown;
+}> {}
+
+class FileMissingError extends Data.TaggedError('FileMissingError')<{
+  path: string;
+}> {}
+
+class CommandExecutionError extends Data.TaggedError('CommandExecutionError')<{
+  command: string;
+  args: ReadonlyArray<string>;
+  exitCode?: number | null;
+  signal?: NodeJS.Signals | null;
+  cause?: unknown;
+}> {}
+
+class InvalidTransportError extends Data.TaggedError('InvalidTransportError')<{
+  transport: string;
+}> {}
+
+type CliError =
+  | TemplateFileError
+  | ConfigFileError
+  | InvalidFrameworkError
+  | FileWriteError
+  | FileReadError
+  | JsonParseError
+  | FileMissingError
+  | CommandExecutionError
+  | InvalidTransportError;
+
+type PackageJson = {
+  name?: string;
+  version?: string;
+  type?: string;
+  scripts?: StringRecord;
+  dependencies?: StringRecord;
+  devDependencies?: StringRecord;
+  [key: string]: unknown;
+};
+
+interface SpawnExit {
+  readonly type: 'exit';
+  readonly code: number | null;
+  readonly signal: NodeJS.Signals | null;
+}
+
+interface SpawnError {
+  readonly type: 'error';
+  readonly cause: unknown;
+}
+
+type SpawnRejection = SpawnExit | SpawnError;
+
+const isSpawnExit = (value: unknown): value is SpawnExit =>
+  typeof value === 'object' && value !== null && (value as { type?: string }).type === 'exit';
+
+const isSpawnError = (value: unknown): value is SpawnError =>
+  typeof value === 'object' && value !== null && (value as { type?: string }).type === 'error';
+
+const formatUnknown = (value: unknown): string => {
+  if (value instanceof Error) {
+    return value.message;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
   try {
-    await access(TEMPLATE_FILE);
+    return JSON.stringify(value);
   } catch {
-    throw new Error(`Unified template file not found at: ${TEMPLATE_FILE}`);
+    return String(value);
   }
+};
 
-  // Load the configuration file
-  let config: Config;
-  try {
-    const configContent = await readFile(CONFIG_FILE, 'utf-8');
-    config = yaml.parse(configContent) as Config;
-  } catch (error) {
-    throw new Error(`Error loading configuration file: ${error}`);
-  }
-
-  // Check if the specified framework exists in the configuration
-  if (!config.frameworks[framework]) {
-    throw new Error(`Framework '${framework}' not found in configuration`);
-  }
-
-  // Get the framework-specific configuration
-  const frameworkConfig = config.frameworks[framework];
-
-  // Load the template
-  let templateContent: string;
-  try {
-    templateContent = await readFile(TEMPLATE_FILE, 'utf-8');
-  } catch (error) {
-    throw new Error(`Error reading template file: ${error}`);
-  }
-
-  // Replace placeholders with framework-specific values
-  let content = templateContent;
-
-  // Add the framework name
-  content = content.replace(/\{\{framework\}\}/g, framework);
-
-  // Extract variable name from adapter definition
-  let adapterVariableName: string = `mcp_${framework}`;
-  const adapterDef = frameworkConfig.adapter_definition;
-  if (adapterDef) {
-    const firstLine = adapterDef.trim().split('\n')[0]?.trim();
-    if (firstLine?.includes('=')) {
-      adapterVariableName = firstLine.split('=')[0]?.trim() || adapterVariableName;
+const renderCliError = (error: CliError): string => {
+  switch (error._tag) {
+    case 'TemplateFileError':
+      return `Error reading template file at ${error.path}: ${formatUnknown(error.cause)}`;
+    case 'ConfigFileError':
+      return error.reason === 'read'
+        ? `Error loading configuration file ${error.path}: ${formatUnknown(error.cause)}`
+        : `Error parsing configuration file ${error.path}: ${formatUnknown(error.cause)}`;
+    case 'InvalidFrameworkError':
+      return `Framework '${error.framework}' not found in configuration. Available frameworks: ${error.available.join(', ')}`;
+    case 'FileWriteError':
+      return `Error writing file ${error.path}: ${formatUnknown(error.cause)}`;
+    case 'FileReadError':
+      return `Error reading file ${error.path}: ${formatUnknown(error.cause)}`;
+    case 'JsonParseError':
+      return `Error parsing JSON file ${error.path}: ${formatUnknown(error.cause)}`;
+    case 'FileMissingError':
+      return `File not found: ${error.path}`;
+    case 'CommandExecutionError': {
+      const command = [error.command, ...error.args].join(' ');
+      const details = error.exitCode != null
+        ? ` (exit code ${error.exitCode}${error.signal ? `, signal ${error.signal}` : ''})`
+        : '';
+      const cause = error.cause != null ? `: ${formatUnknown(error.cause)}` : '';
+      return `Command failed: ${command}${details}${cause}`;
     }
+    case 'InvalidTransportError':
+      return `Invalid transport: ${error.transport}`;
   }
+};
 
-  // Replace all placeholders
-  for (const [key, value] of Object.entries(frameworkConfig)) {
-    const placeholder = `{{${key}}}`;
-    content = content.replace(new RegExp(placeholder, 'g'), value);
-  }
+const readTemplateContent = (): Effect.Effect<string, TemplateFileError> =>
+  Effect.tryPromise({
+    try: () => readFile(TEMPLATE_FILE, 'utf-8'),
+    catch: (cause) => new TemplateFileError({ path: TEMPLATE_FILE, cause }),
+  });
 
-  // Replace adapter_variable_name placeholder
-  content = content.replace(/\{\{adapter_variable_name\}\}/g, adapterVariableName);
+const readConfigContent = (): Effect.Effect<string, ConfigFileError> =>
+  Effect.tryPromise({
+    try: () => readFile(CONFIG_FILE, 'utf-8'),
+    catch: (cause) => new ConfigFileError({ path: CONFIG_FILE, reason: 'read', cause }),
+  });
 
-  // Write the file
-  const filePath = join(directory, 'run_mcp.ts');
-  await writeFile(filePath, content);
+const parseYamlConfig = (content: string): Effect.Effect<Config, ConfigFileError> =>
+  Effect.try({
+    try: () => yaml.parse(content) as Config,
+    catch: (cause) => new ConfigFileError({ path: CONFIG_FILE, reason: 'parse', cause }),
+  });
 
-  console.log(`Created ${filePath} from unified template for ${framework} framework.`);
-}
+const readTextFile = (path: string): Effect.Effect<string, FileReadError> =>
+  Effect.tryPromise({
+    try: () => readFile(path, 'utf-8'),
+    catch: (cause) => new FileReadError({ path, cause }),
+  });
 
-async function initCommand(framework: string): Promise<void> {
-  const currentDir = process.cwd();
+const writeTextFile = (path: string, content: string): Effect.Effect<void, FileWriteError> =>
+  Effect.tryPromise({
+    try: () => writeFile(path, content),
+    catch: (cause) => new FileWriteError({ path, cause }),
+  });
 
-  try {
-    await createMcpServerFile(currentDir, framework);
-  } catch (error) {
-    console.error(`Error creating server file: ${error}`);
-    process.exit(1);
-  }
+const ensureFileExists = (path: string): Effect.Effect<void, FileMissingError> =>
+  Effect.tryPromise({
+    try: () => access(path),
+    catch: () => new FileMissingError({ path }),
+  });
 
-  console.log('\nSetup complete! Next steps:');
-  console.log(`1. Edit ${join(currentDir, 'run_mcp.ts')} to import and configure your ${framework} agent/crew/graph`);
-  console.log('2. Add a .env file with necessary environment variables');
-  console.log('3. Run your MCP server using one of these commands:');
-  console.log('   - npm run serve         # For STDIO transport (default)');
-  console.log('   - npm run serve:sse     # For SSE transport');
-  console.log('   - tsx run_mcp.ts        # Direct execution');
-}
+const spawnEffect = (
+  command: string,
+  args: ReadonlyArray<string>,
+  options: SpawnOptions,
+): Effect.Effect<void, CommandExecutionError> =>
+  Effect.tryPromise({
+    try: () =>
+      new Promise<void>((resolve, reject) => {
+        const child = spawn(command, Array.from(args), options);
+        child.on('error', (cause) => {
+          reject({ type: 'error', cause } satisfies SpawnRejection);
+        });
+        child.on('exit', (code, signal) => {
+          if (code === 0) {
+            resolve();
+          } else {
+            reject({ type: 'exit', code, signal } satisfies SpawnRejection);
+          }
+        });
+      }),
+    catch: (reason) => {
+      if (isSpawnExit(reason)) {
+        return new CommandExecutionError({
+          command,
+          args,
+          exitCode: reason.code,
+          signal: reason.signal,
+        });
+      }
+      if (isSpawnError(reason)) {
+        return new CommandExecutionError({
+          command,
+          args,
+          cause: reason.cause,
+        });
+      }
+      return new CommandExecutionError({
+        command,
+        args,
+        cause: reason,
+      });
+    },
+  });
 
-async function ensureProjectDependencies(directory: string): Promise<void> {
-  const packageJsonPath = join(directory, 'package.json');
-  let pkg: any = null;
+const loadFrameworkConfig = (): Effect.Effect<Config, ConfigFileError> =>
+  Effect.gen(function* (_) {
+    const content = yield* _(readConfigContent());
+    return yield* _(parseYamlConfig(content));
+  });
 
-  if (!existsSync(packageJsonPath)) {
-    // Minimal package.json
-    pkg = {
-      name: 'mcp-server',
-      version: '1.0.0',
-      type: 'module',
-      scripts: {
-        serve: 'tsx run_mcp.ts',
-        'serve:sse': 'tsx run_mcp.ts sse'
-      },
-      dependencies: {
+const loadAvailableFrameworksEffect = (): Effect.Effect<ReadonlyArray<string>, ConfigFileError> =>
+  Effect.gen(function* (_) {
+    const config = yield* _(loadFrameworkConfig());
+    return Object.keys(config.frameworks);
+  });
+
+const createMcpServerFile = (directory: string, framework: string): Effect.Effect<void, CliError> =>
+  Effect.gen(function* (_) {
+    const config = yield* _(loadFrameworkConfig());
+    const frameworks = Object.keys(config.frameworks);
+    const maybeConfig = config.frameworks[framework];
+    if (!maybeConfig) {
+      yield* _(Effect.fail(new InvalidFrameworkError({ framework, available: frameworks })));
+      return;
+    }
+    const frameworkConfig = maybeConfig;
+    const templateContent = yield* _(readTemplateContent());
+    const content = yield* _(Effect.sync(() => {
+      let updated = templateContent.replace(/\{\{framework\}\}/g, framework);
+      let adapterVariableName = `mcp_${framework}`;
+      const adapterDef = frameworkConfig.adapter_definition;
+      if (adapterDef) {
+        const firstLine = adapterDef.trim().split('\n')[0]?.trim();
+        if (firstLine && firstLine.includes('=')) {
+          adapterVariableName = firstLine.split('=')[0]?.trim() ?? adapterVariableName;
+        }
+      }
+      for (const [key, value] of Object.entries(frameworkConfig)) {
+        const placeholder = new RegExp(`\\{\\{${key}\\}}`, 'g');
+        updated = updated.replace(placeholder, value);
+      }
+      updated = updated.replace(/\{\{adapter_variable_name\}\}/g, adapterVariableName);
+      return updated;
+    }));
+    const filePath = join(directory, 'run_mcp.ts');
+    yield* _(writeTextFile(filePath, content));
+    yield* _(Effect.sync(() => {
+      console.log(`Created ${filePath} from unified template for ${framework} framework.`);
+    }));
+  });
+
+const ensureProjectDependencies = (directory: string): Effect.Effect<void, CliError> =>
+  Effect.gen(function* (_) {
+    const packageJsonPath = join(directory, 'package.json');
+    const nodeModulesPath = join(directory, 'node_modules');
+    const packageJsonExists = yield* _(Effect.sync(() => existsSync(packageJsonPath)));
+
+    if (!packageJsonExists) {
+      const pkg: PackageJson = {
+        name: 'mcp-server',
+        version: '1.0.0',
+        type: 'module',
+        scripts: {
+          serve: 'tsx run_mcp.ts',
+          'serve:sse': 'tsx run_mcp.ts sse',
+        },
+        dependencies: {
+          '@modelcontextprotocol/sdk': '^1.12.0',
+          zod: '^3.22.4',
+          express: '^4.18.2',
+          'automcp-ts': '^0.1.0',
+        },
+        devDependencies: {
+          tsx: '^4.6.0',
+          '@types/node': '^20.10.0',
+          '@types/express': '^4.17.21',
+        },
+      };
+      yield* _(writeTextFile(packageJsonPath, JSON.stringify(pkg, null, 2)));
+      yield* _(Effect.sync(() => {
+        console.log('Created package.json');
+      }));
+    } else {
+      const content = yield* _(readTextFile(packageJsonPath));
+      const current = yield* _(Effect.try({
+        try: () => JSON.parse(content) as PackageJson,
+        catch: (cause) => new JsonParseError({ path: packageJsonPath, cause }),
+      }));
+
+      const scripts: StringRecord = typeof current.scripts === 'object' && current.scripts
+        ? Object.fromEntries(Object.entries(current.scripts).filter(([, value]) => typeof value === 'string'))
+        : {};
+      const dependencies: StringRecord = typeof current.dependencies === 'object' && current.dependencies
+        ? Object.fromEntries(Object.entries(current.dependencies).filter(([, value]) => typeof value === 'string'))
+        : {};
+      const devDependencies: StringRecord = typeof current.devDependencies === 'object' && current.devDependencies
+        ? Object.fromEntries(Object.entries(current.devDependencies).filter(([, value]) => typeof value === 'string'))
+        : {};
+
+      current.scripts = scripts;
+      current.dependencies = dependencies;
+      current.devDependencies = devDependencies;
+
+      const requiredDeps: StringRecord = {
         '@modelcontextprotocol/sdk': '^1.12.0',
         zod: '^3.22.4',
         express: '^4.18.2',
-        'automcp-ts': '^0.1.0'
-      },
-      devDependencies: {
+        'automcp-ts': '^0.1.0',
+      };
+      const requiredDevDeps: StringRecord = {
         tsx: '^4.6.0',
         '@types/node': '^20.10.0',
-        '@types/express': '^4.17.21'
-      }
-    };
-    await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2));
-    console.log('Created package.json');
-  } else {
-    // Read and update
-    const current = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    current.scripts ||= {};
-    current.scripts.serve ||= 'tsx run_mcp.ts';
-    current.scripts['serve:sse'] ||= 'tsx run_mcp.ts sse';
-    current.dependencies ||= {};
-    current.devDependencies ||= {};
+        '@types/express': '^4.17.21',
+      };
 
-    const requiredDeps: Record<string, string> = {
-      '@modelcontextprotocol/sdk': '^1.12.0',
-      zod: '^3.22.4',
-      express: '^4.18.2',
-      'automcp-ts': '^0.1.0'
-    };
-    const requiredDevDeps: Record<string, string> = {
-      tsx: '^4.6.0',
-      '@types/node': '^20.10.0',
-      '@types/express': '^4.17.21'
-    };
-
-    let changed = false;
-    for (const [dep, ver] of Object.entries(requiredDeps)) {
-      if (!current.dependencies[dep]) {
-        current.dependencies[dep] = ver;
+      let changed = false;
+      if (!scripts.serve) {
+        scripts.serve = 'tsx run_mcp.ts';
         changed = true;
       }
-    }
-    for (const [dep, ver] of Object.entries(requiredDevDeps)) {
-      if (!current.devDependencies[dep]) {
-        current.devDependencies[dep] = ver;
+      if (!scripts['serve:sse']) {
+        scripts['serve:sse'] = 'tsx run_mcp.ts sse';
         changed = true;
+      }
+      for (const [dep, ver] of Object.entries(requiredDeps)) {
+        if (!dependencies[dep]) {
+          dependencies[dep] = ver;
+          changed = true;
+        }
+      }
+      for (const [dep, ver] of Object.entries(requiredDevDeps)) {
+        if (!devDependencies[dep]) {
+          devDependencies[dep] = ver;
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        yield* _(writeTextFile(packageJsonPath, JSON.stringify(current, null, 2)));
+        yield* _(Effect.sync(() => {
+          console.log('Updated package.json with required dependencies');
+        }));
       }
     }
 
-    if (changed) {
-      await writeFile(packageJsonPath, JSON.stringify(current, null, 2));
-      console.log('Updated package.json with required dependencies');
+    const nodeModulesExists = yield* _(Effect.sync(() => existsSync(nodeModulesPath)));
+    if (!nodeModulesExists) {
+      yield* _(Effect.sync(() => {
+        console.log('Installing dependencies (npm install)...');
+      }));
+      yield* _(spawnEffect('npm', ['install', '--no-fund', '--no-audit'], { stdio: 'inherit', cwd: directory }));
     }
-    pkg = current;
-  }
+  });
 
-  // npm install if node_modules missing
-  const nodeModulesPath = join(directory, 'node_modules');
-  if (!existsSync(nodeModulesPath)) {
-    console.log('Installing dependencies (npm install)...');
-    await new Promise<void>((resolve, reject) => {
-      const child = spawn('npm', ['install', '--no-fund', '--no-audit'], { stdio: 'inherit', cwd: directory });
-      child.on('exit', (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`npm install failed with code ${code}`));
-      });
-      child.on('error', reject);
-    });
-  }
-}
+const serveCommand = (transport: 'stdio' | 'sse'): Effect.Effect<void, CliError> =>
+  Effect.gen(function* (_) {
+    yield* _(Effect.sync(() => {
+      console.log(`Running AutoMCP-TS server with ${transport} transport`);
+    }));
+    const currentDir = process.cwd();
+    const mcpFile = join(currentDir, 'run_mcp.ts');
+    yield* _(ensureFileExists(mcpFile));
+    yield* _(ensureProjectDependencies(currentDir));
+    const args = transport === 'stdio' ? ['-y', 'tsx', mcpFile] : ['-y', 'tsx', mcpFile, 'sse'];
+    yield* _(spawnEffect('npx', args, { stdio: 'inherit', cwd: currentDir }));
+  });
 
-async function serveCommand(transport: 'stdio' | 'sse'): Promise<void> {
-  console.log(`Running AutoMCP-TS server with ${transport} transport`);
-  const currentDir = process.cwd();
+const initCommand = (framework: string): Effect.Effect<void, CliError> =>
+  Effect.gen(function* (_) {
+    const currentDir = process.cwd();
+    yield* _(createMcpServerFile(currentDir, framework));
+    yield* _(Effect.sync(() => {
+      console.log('\nSetup complete! Next steps:');
+      console.log(`1. Edit ${join(currentDir, 'run_mcp.ts')} to import and configure your ${framework} agent/crew/graph`);
+      console.log('2. Add a .env file with necessary environment variables');
+      console.log('3. Run your MCP server using one of these commands:');
+      console.log('   - npm run serve         # For STDIO transport (default)');
+      console.log('   - npm run serve:sse     # For SSE transport');
+      console.log('   - tsx run_mcp.ts        # Direct execution');
+    }));
+  });
 
-  const mcpFile = join(currentDir, 'run_mcp.ts');
-  try {
-    await access(mcpFile);
-  } catch {
-    throw new Error('run_mcp.ts not found in current directory');
-  }
-
-  // One-command environment bootstrap
-  try {
-    await ensureProjectDependencies(currentDir);
-  } catch (error) {
-    console.error(`Dependency setup failed: ${error}`);
-    process.exit(1);
-  }
-
-  try {
-    if (transport === 'stdio') {
-      spawn('npx', ['-y', 'tsx', mcpFile], { stdio: 'inherit' });
-    } else {
-      spawn('npx', ['-y', 'tsx', mcpFile, 'sse'], { stdio: 'inherit' });
-    }
-  } catch (error) {
-    console.error(`Error running AutoMCP-TS server: ${error}`);
-    process.exit(1);
-  }
-}
-
-function loadAvailableFrameworks(): string[] {
-  try {
-    const configContent = readFileSync(CONFIG_FILE, 'utf-8');
-    const config = yaml.parse(configContent) as Config;
-    return Object.keys(config.frameworks);
-  } catch (error) {
-    console.error(`Error loading framework configuration: ${error}`);
-    return [];
-  }
-}
-
-function toPascalCase(name: string): string {
-  return name
-    .replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
-    .replace(/^(.)/, (m) => m.toUpperCase());
-}
-
-async function generateAdapterCommand(frameworkName: string): Promise<void> {
-  const currentDir = process.cwd();
-  const safeName = frameworkName.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-  const pascal = toPascalCase(safeName);
-  const fileName = `${safeName}.adapter.ts`;
-  const filePath = join(currentDir, fileName);
-
-  const content = `import { z } from 'zod';
+const generateAdapterCommand = (frameworkName: string): Effect.Effect<void, CliError> =>
+  Effect.gen(function* (_) {
+    const currentDir = process.cwd();
+    const safeName = frameworkName.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const pascal = toPascalCase(safeName);
+    const fileName = `${safeName}.adapter.ts`;
+    const filePath = join(currentDir, fileName);
+    const content = `import { z } from 'zod';
 import { BaseAdapter, AdapterConfig, ToolResult } from 'automcp-ts/lib/adapters/base.js';
 
 class ${pascal}Adapter<T extends Record<string, z.ZodTypeAny>> extends BaseAdapter<T> {
@@ -279,14 +454,34 @@ export function create${pascal}Adapter<T extends Record<string, z.ZodTypeAny>>(
   return adapter.createToolFunction();
 }
 `;
+    yield* _(writeTextFile(filePath, content));
+    yield* _(Effect.sync(() => {
+      console.log(`Created adapter skeleton at ${filePath}`);
+      console.log('Usage:');
+      console.log('  // In your run_mcp.ts');
+      console.log(`  import { create${pascal}Adapter } from './${fileName.replace('.ts', '.js')}';`);
+      console.log(`  const tool = create${pascal}Adapter(new YourAgent(), name, description, InputSchema.shape);`);
+    }));
+  });
 
-  await writeFile(filePath, content);
-  console.log(`Created adapter skeleton at ${filePath}`);
-  console.log('Usage:');
-  console.log(`  // In your run_mcp.ts`);
-  console.log(`  import { create${pascal}Adapter } from './${fileName.replace('.ts', '.js')}';`);
-  console.log(`  const tool = create${pascal}Adapter(new YourAgent(), name, description, InputSchema.shape);`);
-}
+const toPascalCase = (name: string): string =>
+  name
+    .replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
+    .replace(/^(.)/, (m) => m.toUpperCase());
+
+const runCliEffect = (effect: Effect.Effect<void, CliError>): Promise<void> =>
+  Effect.runPromise(
+    Effect.catchAll(effect, (error) =>
+      Effect.sync(() => {
+        console.error(renderCliError(error));
+        process.exitCode = 1;
+      }),
+    ),
+  );
+
+const availableFrameworks = await Effect.runPromise(
+  Effect.catchAll(loadAvailableFrameworksEffect(), () => Effect.succeed([] as string[])),
+);
 
 const program = new Command();
 
@@ -295,39 +490,49 @@ program
   .description('AutoMCP-TS - Convert agents to MCP servers in TypeScript')
   .version('0.1.0');
 
-const availableFrameworks = loadAvailableFrameworks();
+const frameworkChoicesDescription =
+  availableFrameworks.length > 0
+    ? `Agent framework to use (choices: ${availableFrameworks.join(', ')})`
+    : 'Agent framework to use (see templates/framework_config.yaml for options)';
 
 program
   .command('init')
   .description('Create a new MCP server configuration')
-  .requiredOption('-f, --framework <framework>', `Agent framework to use (choices: ${availableFrameworks.join(', ')})`)
-  .action(async (options) => {
-    if (!availableFrameworks.includes(options.framework)) {
-      console.error(`Invalid framework: ${options.framework}`);
-      console.error(`Available frameworks: ${availableFrameworks.join(', ')}`);
-      process.exit(1);
-    }
-    await initCommand(options.framework);
-  });
+  .requiredOption('-f, --framework <framework>', frameworkChoicesDescription)
+  .action((options) =>
+    runCliEffect(
+      Effect.gen(function* (_) {
+        const frameworks = yield* _(loadAvailableFrameworksEffect());
+        if (!frameworks.includes(options.framework)) {
+          yield* _(Effect.fail(new InvalidFrameworkError({ framework: options.framework, available: frameworks })));
+          return;
+        }
+        yield* _(initCommand(options.framework));
+      }),
+    ),
+  );
 
 program
   .command('serve')
   .description('Run the AutoMCP-TS server')
   .option('-t, --transport <transport>', 'Transport to use (stdio or sse)', 'stdio')
-  .action(async (options) => {
-    if (!['stdio', 'sse'].includes(options.transport)) {
-      console.error(`Invalid transport: ${options.transport}`);
-      process.exit(1);
-    }
-    await serveCommand(options.transport as 'stdio' | 'sse');
-  });
+  .action((options) =>
+    runCliEffect(
+      Effect.gen(function* (_) {
+        const transport = options.transport as string;
+        if (transport !== 'stdio' && transport !== 'sse') {
+          yield* _(Effect.fail(new InvalidTransportError({ transport })));
+          return;
+        }
+        yield* _(serveCommand(transport));
+      }),
+    ),
+  );
 
 program
   .command('generate-adapter')
   .description('Generate a from-scratch adapter skeleton in the current directory')
   .requiredOption('-n, --name <frameworkName>', 'Framework name for the new adapter')
-  .action(async (options) => {
-    await generateAdapterCommand(options.name as string);
-  });
+  .action((options) => runCliEffect(generateAdapterCommand(options.name as string)));
 
-program.parse(); 
+program.parse();
