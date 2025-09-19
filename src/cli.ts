@@ -269,7 +269,7 @@ const createMcpServerFile = (directory: string, framework: string): Effect.Effec
       if (adapterDef) {
         const firstLine = adapterDef.trim().split('\n')[0]?.trim();
         if (firstLine && firstLine.includes('=')) {
-          adapterVariableName = firstLine.split('=')[0]?.trim() ?? adapterVariableName;
+          adapterVariableName = firstLine.split('=')[0]?.trim() || adapterVariableName;
         }
       }
       for (const [key, value] of Object.entries(frameworkConfig)) {
