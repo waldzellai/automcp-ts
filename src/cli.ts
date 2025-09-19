@@ -214,11 +214,25 @@ async function serveCommand(transport: 'stdio' | 'sse'): Promise<void> {
   }
 
   try {
+    let child;
     if (transport === 'stdio') {
-      spawn('npx', ['-y', 'tsx', mcpFile], { stdio: 'inherit' });
+      child = spawn('npx', ['-y', 'tsx', mcpFile], { 
+        stdio: 'inherit',
+        detached: true
+      });
     } else {
-      spawn('npx', ['-y', 'tsx', mcpFile, 'sse'], { stdio: 'inherit' });
+      child = spawn('npx', ['-y', 'tsx', mcpFile, 'sse'], { 
+        stdio: 'inherit',
+        detached: true
+      });
     }
+    
+    // Detach the process so CLI can exit while server continues running
+    child.unref();
+    
+    console.log(`Server started with PID: ${child.pid}`);
+    console.log('CLI exiting, server continues running in background...');
+    
   } catch (error) {
     console.error(`Error running AutoMCP-TS server: ${error}`);
     process.exit(1);
