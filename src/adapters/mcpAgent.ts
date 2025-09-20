@@ -1,18 +1,8 @@
 import { ToolResult } from './base.js';
+import { ensureSerializable, extractParamsFromArgs, parseInputWithSchema, type SchemaLike } from './utils.js';
 
 interface BaseModel {
   [key: string]: any;
-}
-
-interface FieldInfo {
-  annotation?: any;
-  required?: boolean;
-  default?: any;
-}
-
-interface ModelClass {
-  new (data: any): BaseModel;
-  modelFields?: Record<string, FieldInfo>;
 }
 
 interface AgentInstance {
@@ -35,19 +25,16 @@ export function createMcpAgentAdapter(
   appInitializeFn: AppInitializeFn,
   name: string,
   description: string,
-  inputSchema: ModelClass
+  inputSchema: SchemaLike
 ): (...args: any[]) => Promise<ToolResult> {
   // Define the wrapper function
   const runAgent = async (...args: any[]): Promise<ToolResult> => {
-    // Convert args to object based on schema (simplified approach)
-    const kwargs: Record<string, any> = {};
-    if (args.length === 1 && typeof args[0] === 'object') {
-      Object.assign(kwargs, args[0]);
-    }
-    
-    // Create input object from schema
-    const inputData = new inputSchema(kwargs);
-    
+    const kwargs = extractParamsFromArgs(args, inputSchema);
+    const inputData = parseInputWithSchema(inputSchema, kwargs);
+    const queryInput = inputData && typeof inputData === 'object'
+      ? (inputData as Record<string, any>).query ?? inputData
+      : inputData;
+
     // Create a promise that we can use to communicate between tasks
     let resolveResult: (value: any) => void;
     let rejectResult: (reason: any) => void;
@@ -63,10 +50,12 @@ export function createMcpAgentAdapter(
         
         // Attach LLM to the agent
         const llmInstance: LLMInstance = await agentInstance.attach_llm(llm);
-        
+
         // Execute the main operation
-        const response = await llmInstance.generate_str((inputData as any).query);
-        
+        const response = await llmInstance.generate_str(
+          typeof queryInput === 'string' ? queryInput : JSON.stringify(queryInput)
+        );
+
         // Set the result
         resolveResult(response);
       } catch (error) {
@@ -84,8 +73,8 @@ export function createMcpAgentAdapter(
         resultPromise,
         taskPromise.then(() => resultPromise) // Ensure we wait for the task to complete
       ]);
-      if (result && typeof result === 'object') {
-        const output = result;
+      const output = ensureSerializable(result);
+      if (output && typeof output === 'object') {
         return {
           content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
           structuredContent: output
@@ -116,11 +105,12 @@ export function createMcpAgentAdapter(
  * Helper function to create a schema-based function signature
  */
 export function createSchemaFunction<T extends BaseModel>(
-  schema: ModelClass,
+  schema: SchemaLike,
   implementation: (input: T) => Promise<any>
 ): (data: any) => Promise<any> {
   return async (data: any) => {
-    const input = new schema(data) as T;
+    const params = typeof data === 'object' && data !== null ? data : { value: data };
+    const input = parseInputWithSchema(schema, params) as T;
     return await implementation(input);
   };
-} 
+}

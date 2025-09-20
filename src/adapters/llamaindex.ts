@@ -1,20 +1,8 @@
 import { ToolResult } from './base.js';
-import { ensureSerializable } from './utils.js';
+import { ensureSerializable, extractParamsFromArgs, parseInputWithSchema, type SchemaLike } from './utils.js';
 
 interface BaseModel {
   [key: string]: any;
-  model_dump?(): Record<string, any>;
-}
-
-interface FieldInfo {
-  annotation?: any;
-  required?: boolean;
-  default?: any;
-}
-
-interface ModelClass {
-  new (data: any): BaseModel;
-  model_fields?: Record<string, FieldInfo>;
 }
 
 interface LlamaIndexAgentLike {
@@ -30,35 +18,14 @@ export function createLlamaIndexAdapter(
   agentInstance: LlamaIndexAgentLike,
   name: string,
   description: string,
-  inputSchema?: ModelClass,
+  inputSchema?: SchemaLike,
 ): (...args: any[]) => Promise<ToolResult> {
   const runAgent = async (...args: any[]): Promise<ToolResult> => {
-    // Prefer a single params object (as provided by MCP server.tool)
-    let params: Record<string, any> = {};
-
-    if (args.length === 1 && typeof args[0] === 'object' && !Array.isArray(args[0])) {
-      params = args[0] as Record<string, any>;
-    } else if (inputSchema && inputSchema.model_fields) {
-      const schemaFields = inputSchema.model_fields || {};
-      const fieldNames = Object.keys(schemaFields);
-      fieldNames.forEach((fieldName, index) => {
-        if (index < args.length) {
-          params[fieldName] = args[index];
-        }
-      });
-    }
-
-    // If a Pydantic-like class is provided, attempt to build input
-    if (inputSchema && typeof inputSchema === 'function') {
-      try {
-        const instance = new inputSchema(params);
-        if (typeof instance.model_dump === 'function') {
-          params = instance.model_dump();
-        }
-      } catch {
-        // Ignore and use params directly
-      }
-    }
+    const params = extractParamsFromArgs(args, inputSchema);
+    const parsedParams = parseInputWithSchema(inputSchema, params);
+    const effectiveParams = parsedParams && typeof parsedParams === 'object'
+      ? parsedParams
+      : params;
 
     // Capture console noise
     const originalLog = console.log;
@@ -73,11 +40,19 @@ export function createLlamaIndexAdapter(
       // Determine best method
       let response: any;
       if (typeof agentInstance.chat === 'function') {
-        response = await agentInstance.chat(params.query ?? params);
+        const queryInput = effectiveParams && typeof effectiveParams === 'object'
+          ? (effectiveParams as Record<string, any>).query ?? effectiveParams
+          : effectiveParams;
+        response = await agentInstance.chat(queryInput);
       } else if (typeof agentInstance.query === 'function') {
-        response = await agentInstance.query(params.query ?? params);
+        const queryInput = effectiveParams && typeof effectiveParams === 'object'
+          ? (effectiveParams as Record<string, any>).query ?? effectiveParams
+          : effectiveParams;
+        response = await agentInstance.query(queryInput);
       } else if (typeof agentInstance.run === 'function') {
-        const inputValues = Array.isArray(params) ? params : Object.values(params);
+        const inputValues = Array.isArray(effectiveParams)
+          ? effectiveParams
+          : Object.values(effectiveParams);
         response = await agentInstance.run(...inputValues);
       } else {
         throw new Error('Unsupported LlamaIndex agent type: expected chat, query, or run');
@@ -111,7 +86,7 @@ export function createTypedLlamaIndexAdapter<T extends BaseModel>(
   agentInstance: LlamaIndexAgentLike,
   name: string,
   description: string,
-  inputSchema?: ModelClass,
+  inputSchema?: SchemaLike,
 ): (input: T) => Promise<ToolResult> {
   const adapter = createLlamaIndexAdapter(agentInstance, name, description, inputSchema);
 

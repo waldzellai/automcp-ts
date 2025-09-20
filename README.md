@@ -72,7 +72,7 @@ automcp-ts generate-adapter --name myframework
 Edit the generated `run_mcp.ts` file:
 
 ```typescript
-import { createLangGraphAdapter } from 'automcp-ts/lib/adapters/langgraph.js';
+import { createLangGraphAdapter } from 'automcp-ts';
 import { z } from 'zod';
 import { MyLangGraphAgent } from './my-agent.js';
 
@@ -116,26 +116,20 @@ echo this header so clients can confirm the negotiated protocol version.
 
 ## Adapter API Reference
 
-### Common Interfaces
+### Schema Support
 
-All adapters share these common TypeScript interfaces:
+Adapters accept input definitions in a few different forms so you can keep using
+whichever style is most convenient:
 
-```typescript
-interface BaseModel {
-  [key: string]: any;
-  model_dump?(): Record<string, any>;
-}
-
-interface ModelClass {
-  new (data: any): BaseModel;
-  model_fields?: Record<string, FieldInfo>;
-}
-```
+- A `z.object({...})` instance (recommended)
+- A plain record of Zod field definitions such as `InputSchema.shape`
+- A class that exposes `model_fields`/`model_dump()` for compatibility with
+  Pydantic-style models
 
 ### CrewAI Adapter
 
 ```typescript
-import { createCrewAIAdapter } from 'automcp-ts/lib/adapters/crewai.js';
+import { createCrewAIAdapter } from 'automcp-ts';
 
 const adapter = createCrewAIAdapter(
   crewInstance,      // Your CrewAI agent
@@ -148,7 +142,7 @@ const adapter = createCrewAIAdapter(
 ### LangGraph Adapter
 
 ```typescript
-import { createLangGraphAdapter } from 'automcp-ts/lib/adapters/langgraph.js';
+import { createLangGraphAdapter } from 'automcp-ts';
 
 const adapter = createLangGraphAdapter(
   graphAgent,        // Your LangGraph agent
@@ -161,7 +155,7 @@ const adapter = createLangGraphAdapter(
 ### OpenAI Adapter
 
 ```typescript
-import { createOpenAIAdapter } from 'automcp-ts/lib/adapters/openai.js';
+import { createOpenAIAdapter } from 'automcp-ts';
 
 const adapter = createOpenAIAdapter(
   openaiAgent,       // Your OpenAI agent
@@ -175,7 +169,7 @@ const adapter = createOpenAIAdapter(
 ### Pydantic Adapter
 
 ```typescript
-import { createPydanticAdapter } from 'automcp-ts/lib/adapters/pydantic.js';
+import { createPydanticAdapter } from 'automcp-ts';
 
 const adapter = createPydanticAdapter(
   pydanticAgent,     // Your Pydantic agent
@@ -188,7 +182,7 @@ const adapter = createPydanticAdapter(
 ### LlamaIndex Adapter
 
 ```typescript
-import { createLlamaIndexAdapter } from 'automcp-ts/lib/adapters/llamaindex.js';
+import { createLlamaIndexAdapter } from 'automcp-ts';
 
 const adapter = createLlamaIndexAdapter(
   llamaAgent,        // Your LlamaIndex agent
@@ -202,7 +196,7 @@ const adapter = createLlamaIndexAdapter(
 ### MCP Agent Adapter
 
 ```typescript
-import { createMcpAgentAdapter } from 'automcp-ts/lib/adapters/mcpAgent.js';
+import { createMcpAgentAdapter } from 'automcp-ts';
 
 const adapter = createMcpAgentAdapter(
   agentInstance,     // Agent instance
@@ -222,7 +216,7 @@ const adapter = createMcpAgentAdapter(
 The `ensureSerializable` utility converts complex objects to JSON-safe formats:
 
 ```typescript
-import { ensureSerializable } from 'automcp-ts/lib/adapters/utils.js';
+import { ensureSerializable } from 'automcp-ts';
 
 const safeData = ensureSerializable(complexObject);
 ```
@@ -232,7 +226,7 @@ const safeData = ensureSerializable(complexObject);
 Create Pydantic-like models in TypeScript:
 
 ```typescript
-import { createModel } from 'automcp-ts/lib/adapters/pydantic.js';
+import { createModel } from 'automcp-ts';
 
 const MyModel = createModel({
   name: { annotation: String, required: true },
@@ -255,7 +249,7 @@ Framework configurations are stored in YAML files:
 frameworks:
   langgraph:
     adapter_import: createLangGraphAdapter
-    adapter_module_path: automcp-ts/lib/adapters/langgraph.js
+    adapter_module_path: automcp-ts
     import_comment: "// import { YourLangGraphAgent } from './your-module.js';"
     adapter_definition: |
       const mcpLanggraphAgent = createLangGraphAdapter(
@@ -304,7 +298,7 @@ const result = await adapter({ query: 'Hello' });
 Full TypeScript support with generic types:
 
 ```typescript
-import { createTypedLangGraphAdapter } from 'automcp-ts/lib/adapters/langgraph.js';
+import { createTypedLangGraphAdapter } from 'automcp-ts';
 
 interface MyInput {
   query: string;
@@ -347,7 +341,7 @@ adapter = create_langgraph_adapter(agent, "name", "desc", InputSchema)
 
 **TypeScript:**
 ```typescript
-import { createLangGraphAdapter } from 'automcp-ts/lib/adapters/langgraph.js';
+import { createLangGraphAdapter } from 'automcp-ts';
 import { z } from 'zod';
 
 const InputSchema = z.object({

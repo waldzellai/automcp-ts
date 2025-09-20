@@ -1,7 +1,7 @@
 frameworks:
   crewai:
     adapter_import: createCrewAIAdapter
-    adapter_module_path: automcp-ts/lib/adapters/crewai.js
+    adapter_module_path: automcp-ts
     import_comment: "// import { YourCrewAIAgent } from './your-agent.js';"
     adapter_definition: |
       const mcpCrewAIAgent = createCrewAIAdapter(
@@ -13,7 +13,7 @@ frameworks:
 
   langgraph:
     adapter_import: createLangGraphAdapter
-    adapter_module_path: automcp-ts/lib/adapters/langgraph.js
+    adapter_module_path: automcp-ts
     import_comment: "// import { YourLangGraphAgent } from './your-agent.js';"
     adapter_definition: |
       const mcpLangGraphAgent = createLangGraphAdapter(
@@ -25,7 +25,7 @@ frameworks:
 
   llamaindex:
     adapter_import: createLlamaIndexAdapter
-    adapter_module_path: automcp-ts/lib/adapters/llamaindex.js
+    adapter_module_path: automcp-ts
     import_comment: "// import { YourLlamaIndexAgent } from './your-agent.js';"
     adapter_definition: |
       const mcpLlamaIndexAgent = createLlamaIndexAdapter(
@@ -37,7 +37,7 @@ frameworks:
 
   openai:
     adapter_import: createOpenAIAdapter
-    adapter_module_path: automcp-ts/lib/adapters/openai.js
+    adapter_module_path: automcp-ts
     import_comment: "// import { YourOpenAIAgent } from './your-agent.js';"
     adapter_definition: |
       const mcpOpenAIAgent = createOpenAIAdapter(
@@ -49,7 +49,7 @@ frameworks:
 
   pydantic:
     adapter_import: createPydanticAdapter
-    adapter_module_path: automcp-ts/lib/adapters/pydantic.js
+    adapter_module_path: automcp-ts
     import_comment: "// import { YourPydanticAgent } from './your-agent.js';"
     adapter_definition: |
       const mcpPydanticAgent = createPydanticAdapter(
@@ -59,9 +59,9 @@ frameworks:
         InputSchema
       );
 
-  mcp-agent:
+  mcp_agent:
     adapter_import: createMcpAgentAdapter
-    adapter_module_path: automcp-ts/lib/adapters/mcpAgent.js
+    adapter_module_path: automcp-ts
     import_comment: "// import { YourMcpAgent, llm, app, initializeFn } from './your-agent.js';"
     adapter_definition: |
       const mcpAgentTool = createMcpAgentAdapter(
@@ -76,12 +76,12 @@ frameworks:
 
   express:
     adapter_import: createExpressAdapter
-    adapter_module_path: automcp-ts/lib/adapters/express.js
+    adapter_module_path: automcp-ts
     import_comment: "// import { YourExpressAgent } from './your-agent.js';"
     adapter_definition: |
       const mcpExpressAgent = createExpressAdapter({
         agentInstance: new YourExpressAgent(),
         name: name,
         description: description,
-        inputSchema: InputSchema
+        inputSchema: InputSchema.shape
       });

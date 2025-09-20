@@ -1,4 +1,5 @@
 import { ToolResult } from './base.js';
+import { ensureSerializable, extractParamsFromArgs, parseInputWithSchema, type SchemaLike } from './utils.js';
 
 interface BaseModel {
   [key: string]: any;
@@ -9,11 +10,6 @@ interface FieldInfo {
   annotation?: any;
   required?: boolean;
   default?: any;
-}
-
-interface ModelClass {
-  new (data: any): BaseModel;
-  model_fields?: Record<string, FieldInfo>;
 }
 
 interface AgentResult {
@@ -32,29 +28,12 @@ export function createPydanticAdapter(
   agentInstance: PydanticAgent,
   name: string,
   description: string,
-  inputSchema: ModelClass
+  inputSchema: SchemaLike
 ): (...args: any[]) => Promise<ToolResult> {
   const runAgent = async (...args: any[]): Promise<ToolResult> => {
-    // Convert args to object based on schema
-    const kwargs: Record<string, any> = {};
-    
-    // If args is a single object, use it directly
-    if (args.length === 1 && typeof args[0] === 'object' && !Array.isArray(args[0])) {
-      Object.assign(kwargs, args[0]);
-    } else {
-      // Otherwise, map positional args to schema fields
-      const schemaFields = inputSchema.model_fields || {};
-      const fieldNames = Object.keys(schemaFields);
-      fieldNames.forEach((fieldName, index) => {
-        if (index < args.length) {
-          kwargs[fieldName] = args[index];
-        }
-      });
-    }
-    
-    // Create the input object
-    const inputData = new inputSchema(kwargs);
-    
+    const kwargs = extractParamsFromArgs(args, inputSchema);
+    const parsedInput = parseInputWithSchema(inputSchema, kwargs);
+
     // Redirect stdout equivalent (capture console output)
     const originalLog = console.log;
     const originalWarn = console.warn;
@@ -65,10 +44,15 @@ export function createPydanticAdapter(
     console.log = (...args) => outputBuffer.push(args.join(' '));
     console.warn = (...args) => outputBuffer.push(args.join(' '));
     console.error = (...args) => outputBuffer.push(args.join(' '));
-    
+
     try {
       // Call the async run method
-      const result = await agentInstance.run(inputData.query || '');
+      const queryInput = parsedInput && typeof parsedInput === 'object'
+        ? (parsedInput as Record<string, any>).query ?? parsedInput
+        : parsedInput;
+      const result = await agentInstance.run(
+        typeof queryInput === 'string' ? queryInput : JSON.stringify(queryInput)
+      );
 
       let output: any = result;
 
@@ -80,15 +64,17 @@ export function createPydanticAdapter(
         }
       }
 
-      if (output && typeof output === 'object') {
+      const serialized = ensureSerializable(output);
+
+      if (serialized && typeof serialized === 'object') {
         return {
-          content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
-          structuredContent: output
+          content: [{ type: 'text', text: JSON.stringify(serialized, null, 2) }],
+          structuredContent: serialized
         };
       }
 
       return {
-        content: [{ type: 'text', text: String(output) }]
+        content: [{ type: 'text', text: String(serialized) }]
       };
     } finally {
       // Restore original console methods
@@ -112,7 +98,7 @@ export function createTypedPydanticAdapter<T extends BaseModel>(
   agentInstance: PydanticAgent,
   name: string,
   description: string,
-  inputSchema: ModelClass
+  inputSchema: SchemaLike
 ): (input: T) => Promise<ToolResult> {
   const adapter = createPydanticAdapter(agentInstance, name, description, inputSchema);
 
@@ -126,10 +112,10 @@ export function createTypedPydanticAdapter<T extends BaseModel>(
  */
 export function createModel<T extends Record<string, any>>(
   fields: Record<keyof T, FieldInfo>
-): ModelClass {
+) {
   return class PydanticModel implements BaseModel {
     [key: string]: any;
-    
+
     constructor(data: Partial<T>) {
       Object.assign(this, data);
       

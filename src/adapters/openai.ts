@@ -1,19 +1,8 @@
 import { ToolResult } from './base.js';
+import { ensureSerializable, extractParamsFromArgs, parseInputWithSchema, type SchemaLike } from './utils.js';
 
 interface BaseModel {
   [key: string]: any;
-  model_dump?(): Record<string, any>;
-}
-
-interface FieldInfo {
-  annotation?: any;
-  required?: boolean;
-  default?: any;
-}
-
-interface ModelClass {
-  new (data: any): BaseModel;
-  model_fields?: Record<string, FieldInfo>;
 }
 
 interface RunnerResult {
@@ -59,37 +48,15 @@ export function createOpenAIAdapter(
   agentInstance: any,
   name: string,
   description: string,
-  inputSchema?: ModelClass,
+  inputSchema?: SchemaLike,
   runner: Runner = DefaultRunner
 ): (...args: any[]) => Promise<ToolResult> {
   const runAgent = async (...args: any[]): Promise<ToolResult> => {
-    // Prefer a single params object (as provided by MCP server.tool)
-    let params: Record<string, any> = {};
-
-    if (args.length === 1 && typeof args[0] === 'object' && !Array.isArray(args[0])) {
-      params = args[0] as Record<string, any>;
-    } else if (inputSchema && inputSchema.model_fields) {
-      // Positional mapping fallback for Pydantic-like model classes
-      const schemaFields = inputSchema.model_fields || {};
-      const fieldNames = Object.keys(schemaFields);
-      fieldNames.forEach((fieldName, index) => {
-        if (index < args.length) {
-          params[fieldName] = args[index];
-        }
-      });
-    }
-
-    // If a Pydantic-like class is provided, attempt to build input
-    if (inputSchema && typeof inputSchema === 'function') {
-      try {
-        const instance = new inputSchema(params);
-        if (typeof instance.model_dump === 'function') {
-          params = instance.model_dump();
-        }
-      } catch {
-        // Ignore and use params directly
-      }
-    }
+    const params = extractParamsFromArgs(args, inputSchema);
+    const parsedParams = parseInputWithSchema(inputSchema, params);
+    const effectiveParams = parsedParams && typeof parsedParams === 'object'
+      ? parsedParams
+      : params;
 
     // Capture console output to avoid interfering with transports
     const originalLog = console.log;
@@ -101,8 +68,8 @@ export function createOpenAIAdapter(
     console.error = () => {};
 
     try {
-      const result = await runner.run(agentInstance, params);
-      const output = result.final_output;
+      const result = await runner.run(agentInstance, effectiveParams);
+      const output = ensureSerializable(result.final_output);
       if (output && typeof output === 'object') {
         return {
           content: [{
@@ -135,7 +102,7 @@ export function createTypedOpenAIAdapter<T extends BaseModel>(
   agentInstance: any,
   name: string,
   description: string,
-  inputSchema?: ModelClass,
+  inputSchema?: SchemaLike,
   runner?: Runner
 ): (input: T) => Promise<ToolResult> {
   const adapter = createOpenAIAdapter(agentInstance, name, description, inputSchema, runner);
