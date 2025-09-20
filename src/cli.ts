@@ -269,7 +269,8 @@ const createMcpServerFile = (directory: string, framework: string): Effect.Effec
       if (adapterDef) {
         const firstLine = adapterDef.trim().split('\n')[0]?.trim();
         if (firstLine && firstLine.includes('=')) {
-          adapterVariableName = firstLine.split('=')[0]?.trim() ?? adapterVariableName;
+          adapterVariableName = firstLine.split('=')[0]?.trim() || adapterVariableName;
+
         }
       }
       for (const [key, value] of Object.entries(frameworkConfig)) {
@@ -388,7 +389,6 @@ const ensureProjectDependencies = (directory: string): Effect.Effect<void, CliEr
       yield* _(spawnEffect('npm', ['install', '--no-fund', '--no-audit'], { stdio: 'inherit', cwd: directory }));
     }
   });
-
 
 const serveCommand = (transport: 'stdio' | 'sse'): Effect.Effect<void, CliError> =>
   Effect.gen(function* (_) {
