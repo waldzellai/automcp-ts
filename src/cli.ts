@@ -389,6 +389,7 @@ const ensureProjectDependencies = (directory: string): Effect.Effect<void, CliEr
     }
   });
 
+
 const serveCommand = (transport: 'stdio' | 'sse'): Effect.Effect<void, CliError> =>
   Effect.gen(function* (_) {
     yield* _(Effect.sync(() => {
