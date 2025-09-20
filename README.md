@@ -30,6 +30,11 @@ The TypeScript version includes adapters for:
 
 ## Installation
 
+### Requirements
+
+- Node.js 18.18 or newer
+- npm 9 or newer
+
 ### From NPM (when published)
 ```bash
 npm install -g automcp-ts

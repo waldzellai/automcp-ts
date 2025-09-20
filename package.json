@@ -2,21 +2,41 @@
   "name": "automcp-ts",
   "version": "0.1.0",
   "description": "Convert tools, agents and orchestrators from existing agent frameworks into MCP servers - TypeScript version",
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    },
+    "./templates/*": "./templates/*",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepack": "npm run build"
   },
   "bin": {
     "automcp-ts": "dist/cli.js"
   },
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
     "commander": "^11.1.0",
-    "effect": "^3.17.13",
+    "effect": "^3.17.14",
     "express": "^4.18.2",
     "yaml": "^2.3.4",
     "zod": "^3.22.4"
@@ -34,6 +54,17 @@
     "agent-frameworks",
     "tools"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/waldzellai/automcp-ts.git"
+  },
+  "bugs": {
+    "url": "https://github.com/waldzellai/automcp-ts/issues"
+  },
+  "homepage": "https://github.com/waldzellai/automcp-ts#readme",
+  "engines": {
+    "node": ">=18.18"
+  },
   "author": "automcp-ts contributors",
   "license": "MIT"
 }
