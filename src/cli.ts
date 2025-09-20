@@ -486,7 +486,7 @@ const generateAdapterCommand = (frameworkName: string): Effect.Effect<void, CliE
     const fileName = `${safeName}.adapter.ts`;
     const filePath = join(currentDir, fileName);
     const content = `import { z } from 'zod';
-import { BaseAdapter, AdapterConfig, ToolResult } from 'automcp-ts/lib/adapters/base.js';
+import { BaseAdapter, AdapterConfig, ToolResult } from 'automcp-ts';
 
 class ${pascal}Adapter<T extends Record<string, z.ZodTypeAny>> extends BaseAdapter<T> {
   protected async executeAgent(inputs: z.infer<z.ZodObject<T>>): Promise<any> {

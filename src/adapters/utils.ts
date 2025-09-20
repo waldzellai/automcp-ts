@@ -1,3 +1,5 @@
+import { z, type AnyZodObject, type ZodTypeAny } from 'zod';
+
 type SerializableValue = Record<string, any> | any[] | string | number | boolean | null;
 
 interface HasToDict {
@@ -12,6 +14,18 @@ interface HasResults {
   results: any;
 }
 
+interface HasModelFields {
+  model_fields?: Record<string, unknown>;
+}
+
+interface HasModelDumpMethod {
+  model_dump?: () => Record<string, any>;
+}
+
+type SchemaRecord = Record<string, ZodTypeAny>;
+
+export type SchemaLike = AnyZodObject | SchemaRecord | (HasModelFields & (new (data: any) => any));
+
 function hasToDict(obj: any): obj is HasToDict {
   return obj && typeof obj.to_dict === 'function';
 }
@@ -22,6 +36,25 @@ function hasModelDump(obj: any): obj is HasModelDump {
 
 function hasResults(obj: any): obj is HasResults {
   return obj && 'results' in obj;
+}
+
+function hasModelFields(schema: unknown): schema is HasModelFields {
+  return Boolean(schema && typeof (schema as HasModelFields).model_fields === 'object');
+}
+
+function hasSchemaRecordValues(schema: unknown): schema is SchemaRecord {
+  if (!isPlainObject(schema)) {
+    return false;
+  }
+  return Object.values(schema as Record<string, unknown>).every(value => value instanceof z.ZodType);
+}
+
+function isZodObject(schema: unknown): schema is AnyZodObject {
+  return schema instanceof z.ZodObject;
+}
+
+function isModelClass(schema: unknown): schema is new (data: any) => HasModelDumpMethod {
+  return typeof schema === 'function';
 }
 
 function isPlainObject(obj: any): obj is Record<string, any> {
@@ -91,4 +124,59 @@ export function ensureSerializable(obj: any): SerializableValue {
   
   // If no conversion method worked, fall back to string
   return String(obj);
-} 
+}
+
+export function extractParamsFromArgs(args: any[], schema?: SchemaLike): Record<string, any> {
+  if (args.length === 1 && isPlainObject(args[0]) && !Array.isArray(args[0])) {
+    return { ...(args[0] as Record<string, any>) };
+  }
+
+  if (!schema) {
+    return Object.fromEntries(args.map((value, index) => [`arg${index}`, value]));
+  }
+
+  let fieldNames: string[] = [];
+  if (isZodObject(schema)) {
+    fieldNames = Object.keys(schema.shape);
+  } else if (hasSchemaRecordValues(schema)) {
+    fieldNames = Object.keys(schema);
+  } else if (hasModelFields(schema)) {
+    fieldNames = Object.keys(schema.model_fields ?? {});
+  }
+
+  const params: Record<string, any> = {};
+  fieldNames.forEach((fieldName, index) => {
+    if (index < args.length) {
+      params[fieldName] = args[index];
+    }
+  });
+
+  return params;
+}
+
+export function parseInputWithSchema(schema: SchemaLike | undefined, params: Record<string, any>): any {
+  if (!schema) {
+    return params;
+  }
+
+  if (isZodObject(schema)) {
+    return schema.parse(params);
+  }
+
+  if (hasSchemaRecordValues(schema)) {
+    return z.object(schema).parse(params);
+  }
+
+  if (isModelClass(schema)) {
+    const instance = new schema(params);
+    if (typeof instance?.model_dump === 'function') {
+      return instance.model_dump();
+    }
+    if (typeof instance?.toJSON === 'function') {
+      return instance.toJSON();
+    }
+    return instance;
+  }
+
+  return params;
+}
