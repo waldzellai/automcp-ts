@@ -303,6 +303,7 @@ const loadAvailableFrameworksEffect = (): Effect.Effect<ReadonlyArray<string>, C
     return Object.keys(config.frameworks);
   });
 
+
 const createMcpServerFile = (directory: string, framework: string): Effect.Effect<void, CliError> =>
   Effect.gen(function* (_) {
     const config = yield* _(loadFrameworkConfig());
@@ -322,6 +323,7 @@ const createMcpServerFile = (directory: string, framework: string): Effect.Effec
         const firstLine = adapterDef.trim().split('\n')[0]?.trim();
         if (firstLine && firstLine.includes('=')) {
           adapterVariableName = firstLine.split('=')[0]?.trim() ?? adapterVariableName;
+
         }
       }
       for (const [key, value] of Object.entries(frameworkConfig)) {
@@ -451,6 +453,7 @@ const serveCommand = (transport: 'stdio' | 'sse'): Effect.Effect<void, CliError>
     yield* _(ensureFileExists(mcpFile));
     yield* _(ensureProjectDependencies(currentDir));
     const args = transport === 'stdio' ? ['-y', 'tsx', mcpFile] : ['-y', 'tsx', mcpFile, 'sse'];
+
     const child = yield* _(
       spawnDetachedEffect('npx', args, { stdio: 'inherit', cwd: currentDir }),
     );
