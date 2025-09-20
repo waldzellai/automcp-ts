@@ -239,6 +239,58 @@ const spawnEffect = (
     },
   });
 
+const spawnDetachedEffect = (
+  command: string,
+  args: ReadonlyArray<string>,
+  options: SpawnOptions,
+): Effect.Effect<ReturnType<typeof spawn>, CommandExecutionError> =>
+  Effect.async<ReturnType<typeof spawn>, CommandExecutionError>((resume) => {
+    let child: ReturnType<typeof spawn>;
+    try {
+      child = spawn(command, Array.from(args), { ...options, detached: true });
+    } catch (cause) {
+      resume(
+        Effect.fail(
+          new CommandExecutionError({
+            command,
+            args,
+            cause,
+          }),
+        ),
+      );
+      return;
+    }
+
+    const cleanup = () => {
+      child.off('error', onError);
+      child.off('spawn', onSpawn);
+    };
+
+    const onError = (cause: Error) => {
+      cleanup();
+      resume(
+        Effect.fail(
+          new CommandExecutionError({
+            command,
+            args,
+            cause,
+          }),
+        ),
+      );
+    };
+
+    const onSpawn = () => {
+      cleanup();
+      child.unref();
+      resume(Effect.succeed(child));
+    };
+
+    child.once('error', onError);
+    child.once('spawn', onSpawn);
+
+    return Effect.sync(cleanup);
+  });
+
 const loadFrameworkConfig = (): Effect.Effect<Config, ConfigFileError> =>
   Effect.gen(function* (_) {
     const content = yield* _(readConfigContent());
@@ -250,6 +302,7 @@ const loadAvailableFrameworksEffect = (): Effect.Effect<ReadonlyArray<string>, C
     const config = yield* _(loadFrameworkConfig());
     return Object.keys(config.frameworks);
   });
+
 
 const createMcpServerFile = (directory: string, framework: string): Effect.Effect<void, CliError> =>
   Effect.gen(function* (_) {
@@ -269,7 +322,7 @@ const createMcpServerFile = (directory: string, framework: string): Effect.Effec
       if (adapterDef) {
         const firstLine = adapterDef.trim().split('\n')[0]?.trim();
         if (firstLine && firstLine.includes('=')) {
-          adapterVariableName = firstLine.split('=')[0]?.trim() || adapterVariableName;
+          adapterVariableName = firstLine.split('=')[0]?.trim() ?? adapterVariableName;
 
         }
       }
@@ -400,7 +453,14 @@ const serveCommand = (transport: 'stdio' | 'sse'): Effect.Effect<void, CliError>
     yield* _(ensureFileExists(mcpFile));
     yield* _(ensureProjectDependencies(currentDir));
     const args = transport === 'stdio' ? ['-y', 'tsx', mcpFile] : ['-y', 'tsx', mcpFile, 'sse'];
-    yield* _(spawnEffect('npx', args, { stdio: 'inherit', cwd: currentDir }));
+
+    const child = yield* _(
+      spawnDetachedEffect('npx', args, { stdio: 'inherit', cwd: currentDir }),
+    );
+    yield* _(Effect.sync(() => {
+      console.log(`Server started with PID: ${child.pid}`);
+      console.log('CLI exiting, server continues running in background...');
+    }));
   });
 
 const initCommand = (framework: string): Effect.Effect<void, CliError> =>
