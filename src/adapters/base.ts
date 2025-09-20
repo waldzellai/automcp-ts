@@ -1,4 +1,11 @@
+import { Effect } from 'effect';
 import { z } from 'zod';
+import {
+  ExecutionError,
+  SerializationError,
+  ToolExecutionError,
+  ValidationError
+} from './errors.js';
 
 // Define the base types for our adapter system
 export interface AgentInstance {
@@ -59,48 +66,111 @@ export abstract class BaseAdapter<T extends InputSchemaType> {
     
     // Return a function that validates inputs and executes the agent
     return async (params: any): Promise<ToolResult> => {
-      try {
-        // Validate inputs using Zod
-        const validatedInputs = schemaObject.parse(params);
-        
-        // Execute the agent with validated inputs
-        const result = await this.executeAgent(validatedInputs);
-        
-        // Ensure the result is serializable
-        const serializedResult = this.ensureSerializable(result);
+      const self = this;
 
-        if (serializedResult && typeof serializedResult === 'object' && 'content' in serializedResult) {
-          // If the agent already returned a ToolResult-like object, pass through
-          return serializedResult as ToolResult;
-        }
+      const program = Effect.gen(function* () {
+        const validatedInputs = yield* self.parseParams(schemaObject, params);
+        const result = yield* self.executeAgentEffect(validatedInputs);
+        const serializedResult = yield* self.serializeResult(result);
+        return self.normalizeResult(serializedResult);
+      });
 
-        const toolResult: ToolResult = {
-          content: [{
-            type: "text",
-            text: typeof serializedResult === 'string'
-              ? serializedResult
-              : JSON.stringify(serializedResult, null, 2)
-          }]
-        };
-
-        if (serializedResult && typeof serializedResult === 'object') {
-          toolResult.structuredContent = serializedResult;
-          if ('resource_links' in serializedResult) {
-            toolResult.resource_links = (serializedResult as any).resource_links;
-          }
-        }
-
-        return toolResult;
-      } catch (error) {
-        return {
-          content: [{
-            type: "text",
-            text: `Error executing agent: ${error instanceof Error ? error.message : String(error)}`
-          }],
-          isError: true
-        };
-      }
+      return Effect.runPromise(program).catch(error => self.formatError(error));
     };
+  }
+
+  private parseParams(schemaObject: z.ZodObject<T>, params: any) {
+    return Effect.try({
+      try: () => schemaObject.parse(params),
+      catch: (error) => {
+        const issues = this.extractZodIssues(error);
+        return new ValidationError({
+          message: 'Invalid input provided to tool.',
+          ...(issues ? { issues } : {}),
+          cause: error
+        });
+      }
+    });
+  }
+
+  private executeAgentEffect(validatedInputs: any) {
+    return Effect.tryPromise({
+      try: () => this.executeAgent(validatedInputs),
+      catch: (error) =>
+        new ExecutionError({
+          message: 'The underlying agent threw an error while executing.',
+          cause: error
+        })
+    });
+  }
+
+  private serializeResult(result: any) {
+    return Effect.try({
+      try: () => this.ensureSerializable(result),
+      catch: (error) =>
+        new SerializationError({
+          message: 'Failed to serialize agent result.',
+          cause: error
+        })
+    });
+  }
+
+  private normalizeResult(serializedResult: any): ToolResult {
+    if (serializedResult && typeof serializedResult === 'object' && 'content' in serializedResult) {
+      return serializedResult as ToolResult;
+    }
+
+    const toolResult: ToolResult = {
+      content: [{
+        type: 'text',
+        text:
+          typeof serializedResult === 'string'
+            ? serializedResult
+            : JSON.stringify(serializedResult, null, 2)
+      }]
+    };
+
+    if (serializedResult && typeof serializedResult === 'object') {
+      toolResult.structuredContent = serializedResult;
+      if ('resource_links' in serializedResult) {
+        toolResult.resource_links = (serializedResult as any).resource_links;
+      }
+    }
+
+    return toolResult;
+  }
+
+  private formatError(error: unknown): ToolResult {
+    const message = this.toolErrorMessage(error);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: message
+        }
+      ],
+      isError: true
+    };
+  }
+
+  private toolErrorMessage(error: unknown): string {
+    if (error && typeof error === 'object' && '_tag' in error && 'message' in error) {
+      return `${(error as ToolExecutionError)._tag}: ${String((error as ToolExecutionError).message)}`;
+    }
+
+    if (error instanceof Error) {
+      return `Error executing agent: ${error.message}`;
+    }
+
+    return `Error executing agent: ${String(error)}`;
+  }
+
+  private extractZodIssues(error: unknown): readonly string[] | undefined {
+    if (error instanceof z.ZodError) {
+      return error.issues.map(issue => `${issue.path.join('.') || '(root)'}: ${issue.message}`);
+    }
+    return undefined;
   }
 
   // Helper method to ensure results are serializable
