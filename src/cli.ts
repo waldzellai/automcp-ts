@@ -490,13 +490,39 @@ import { BaseAdapter, AdapterConfig, ToolResult } from 'automcp-ts';
 
 class ${pascal}Adapter<T extends Record<string, z.ZodTypeAny>> extends BaseAdapter<T> {
   protected async executeAgent(inputs: z.infer<z.ZodObject<T>>): Promise<any> {
-    // TODO: Replace with your framework's invocation logic.
-    // Example patterns to adapt:
-    // return await (this.agentInstance.run?.(inputs)
-    //   ?? this.agentInstance.invoke?.(inputs)
-    //   ?? this.agentInstance.kickoff?.({ inputs })
-    // );
-    throw new Error('executeAgent not implemented for ${pascal}Adapter');
+    const agent = this.agentInstance as {
+      run?: (inputs: any) => Promise<any> | any;
+      invoke?: (inputs: any) => Promise<any> | any;
+      ainvoke?: (inputs: any) => Promise<any> | any;
+      call?: (inputs: any) => Promise<any> | any;
+      kickoff?: (payload: { inputs: any }) => Promise<any> | any;
+    } | ((inputs: any) => Promise<any> | any);
+
+    if (typeof agent === 'function') {
+      return await agent(inputs);
+    }
+
+    if (typeof agent?.run === 'function') {
+      return await agent.run(inputs);
+    }
+
+    if (typeof agent?.invoke === 'function') {
+      return await agent.invoke(inputs);
+    }
+
+    if (typeof agent?.ainvoke === 'function') {
+      return await agent.ainvoke(inputs);
+    }
+
+    if (typeof agent?.call === 'function') {
+      return await agent.call(inputs);
+    }
+
+    if (typeof agent?.kickoff === 'function') {
+      return await agent.kickoff({ inputs });
+    }
+
+    throw new Error('Unable to determine how to execute the provided agent instance.');
   }
 }
 
